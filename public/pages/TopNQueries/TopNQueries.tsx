@@ -14,6 +14,7 @@ import QueryDetails from '../QueryDetails/QueryDetails';
 import { SearchQueryRecord } from '../../../types/types';
 import QueryGroupDetails from "../QueryGroupDetails/QueryGroupDetails";
 
+
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
 
