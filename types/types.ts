@@ -22,7 +22,6 @@ export interface SearchQueryRecord {
   task_resource_usages: Task[];
   query_hashcode: string;
   group_by: string;
-
 }
 
 export interface Measurement {
