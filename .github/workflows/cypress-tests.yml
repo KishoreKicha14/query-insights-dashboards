@@ -138,7 +138,7 @@ jobs:
           wait-on-timeout: 600
           browser: chrome
         env:
-          CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+          CYPRESS_CACHE_FOLDER: ""
 
       # Screenshots are only captured on failure, will change this once we do visual regression tests
       - uses: actions/upload-artifact@v4
