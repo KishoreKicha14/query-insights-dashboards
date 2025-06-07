@@ -1,4 +1,5 @@
 name: Cypress e2e integration tests workflow
+
 on:
   pull_request:
     branches:
@@ -6,11 +7,13 @@ on:
   push:
     branches:
       - "*"
+
 env:
   OPENSEARCH_DASHBOARDS_VERSION: 'main'
   OPENSEARCH_VERSION: '3.0.0-beta1-SNAPSHOT'
   QUERY_INSIGHTS_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
+
 jobs:
   tests:
     name: Run Cypress E2E tests
@@ -24,10 +27,9 @@ jobs:
             cypress_cache_folder: ~/.cache/Cypress
     runs-on: ${{ matrix.os }}
     env:
-      # prevents extra Cypress installation progress messages
       CI: 1
-      # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
+
     steps:
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -55,7 +57,6 @@ jobs:
         run: |
           cd query-insights
           ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
-          sleep 300
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
@@ -77,12 +78,12 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install Yarn
-        # Need to use bash to avoid having a windows/linux specific step
         shell: bash
         run: |
           YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
           echo "Installing yarn@$YARN_VERSION"
           npm i -g yarn@$YARN_VERSION
+
       - run: node -v
       - run: yarn -v
 
@@ -97,57 +98,52 @@ jobs:
           yarn start --no-base-path --no-watch --server.host="0.0.0.0" &
         shell: bash
 
-      # Window is slow so wait longer
-      - name: Sleep until OSD server starts - windows
+      - name: Wait for OSD server (non-Windows)
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: curl --retry 30 --retry-delay 10 --retry-connrefused --fail http://localhost:5601/api/status
+        shell: bash
+
+      - name: Wait for OSD server (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: Start-Sleep -s 600
         shell: powershell
 
-      - name: Sleep until OSD server starts - non-windows
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: sleep 500
-        shell: bash
-
       - name: Install Cypress
         run: |
           cd OpenSearch-Dashboards/plugins/query-insights-dashboards
-          # This will install Cypress in case the binary is missing which can happen on Windows and Mac
-          # If the binary exists, this will exit quickly so it should not be an expensive operation
           npx cypress install
         shell: bash
 
       - name: Get Cypress version
         id: cypress_version
         run: |
-          echo "cypress_version=$(jq -r '.dependencies.cypress' ./package.json)" >> $GITHUB_OUTPUT
+          echo "cypress_version=$(jq -r '.dependencies.cypress' OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json)" >> $GITHUB_OUTPUT
 
       - name: Cache Cypress
         id: cache-cypress
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/cache@v4
         with:
           path: ${{ matrix.cypress_cache_folder }}
-          key: cypress-cache-v4-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
+          key: cypress-cache-v4-${{ matrix.os }}-${{ github.run_id }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
 
-      # for now just chrome, use matrix to do all browsers later
       - name: Cypress tests
         uses: cypress-io/github-action@v6
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
           command: yarn run cypress run
-          wait-on: 'http://localhost:5601'
+          wait-on: 'http://localhost:5601/'
           wait-on-timeout: 600
           browser: chrome
         env:
           CYPRESS_CACHE_FOLDER: ""
 
-      # Screenshots are only captured on failure, will change this once we do visual regression tests
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: cypress-screenshots-${{ matrix.os }}
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
 
-      # Test run video was always captured, so this action uses "always()" condition
       - uses: actions/upload-artifact@v4
         if: always()
         with:
