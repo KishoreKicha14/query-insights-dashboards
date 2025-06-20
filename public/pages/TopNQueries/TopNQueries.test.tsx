@@ -71,8 +71,9 @@ describe('TopNQueries Component', () => {
 
     // Check for Query Insights tab content
     expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
-    expect(screen.getByText('Top N queries')).toBeInTheDocument();
-    expect(screen.getByText('Configuration')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Live queries' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Top N queries' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Configuration' })).toBeInTheDocument();
     expect(container).toMatchSnapshot();
 
     // Switch to Configuration tab
@@ -209,7 +210,7 @@ describe('TopNQueries Component', () => {
     );
     // Verify that the component re-fetches data for the new time range
     await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledTimes(7);
+      expect(mockCore.http.get).toHaveBeenCalledTimes(4);
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',

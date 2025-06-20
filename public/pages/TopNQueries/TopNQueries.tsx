@@ -12,6 +12,7 @@ import { DataSourceOption } from 'src/plugins/data_source_management/public/comp
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
+import { InflightQueries } from '../InflightQueries/InflightQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
@@ -38,6 +39,7 @@ import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
+export const LIVE_QUERIES = '/LiveQueries';
 
 export interface MetricSettings {
   isEnabled: boolean;
@@ -131,6 +133,11 @@ const TopNQueries = ({
   const [queries, setQueries] = useState<SearchQueryRecord[]>([]);
 
   const tabs: Array<{ id: string; name: string; route: string }> = [
+    {
+      id: 'liveQueries',
+      name: 'Live queries',
+      route: LIVE_QUERIES,
+    },
     {
       id: 'topNQueries',
       name: 'Top N queries',
@@ -314,18 +321,26 @@ const TopNQueries = ({
             deleteAfterDays: newDeleteAfterDays,
             exporterType: newExporterType,
           });
-          await core.http.put('/api/update_settings', {
-            query: {
-              metric,
-              enabled,
-              top_n_size: newTopN,
-              window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
-              exporterType: newExporterType,
-              group_by: newGroupBy,
-              delete_after_days: newDeleteAfterDays,
-              dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
-            },
-          });
+          const queryParams: Record<string, any> = {
+            metric,
+            enabled,
+            top_n_size: newTopN,
+            exporterType: newExporterType,
+            group_by: newGroupBy,
+            delete_after_days: newDeleteAfterDays,
+            dataSourceId: getDataSourceFromUrl().id,
+          };
+          if (newTimeUnit === 'MINUTES') {
+            newTimeUnit = 'm';
+          }
+          if (newTimeUnit === 'HOURS') {
+            newTimeUnit = 'h';
+          }
+          if (newWindowSize && newTimeUnit) {
+            queryParams.window_size = `${newWindowSize}${newTimeUnit}`;
+          }
+
+          await core.http.put('/api/update_settings', { query: queryParams });
         } catch (error) {
           console.error('Failed to set settings:', error);
         }
@@ -343,7 +358,6 @@ const TopNQueries = ({
     setEnd(end);
     setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
     retrieveConfigInfo(true);
-    retrieveQueries(start, end);
   };
 
   useEffect(() => {
@@ -386,6 +400,28 @@ const TopNQueries = ({
                 />
               );
             }}
+          </Route>
+          <Route exact path={LIVE_QUERIES}>
+            <PageHeader
+              coreStart={core}
+              depsStart={depsStart}
+              fallBackComponent={
+                <>
+                  <EuiTitle size="l">
+                    <h1>Query insights - In-flight queries scoreboard</h1>
+                  </EuiTitle>
+                  <EuiSpacer size="l" />
+                </>
+              }
+            />
+            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+            <EuiSpacer size="l" />
+            <InflightQueries
+              core={core}
+              depsStart={depsStart}
+              params={params}
+              dataSourceManagement={dataSourceManagement}
+            />
           </Route>
           <Route exact path={QUERY_INSIGHTS}>
             <PageHeader

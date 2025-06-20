@@ -3,7 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SearchQueryRecord } from '../../types/types';
+import { SearchQueryRecord, LiveSearchQueryResponse } from '../../types/types';
+import { API_ENDPOINTS } from './apiendpoints';
+
+interface CustomCore {
+  http: { get: (endpoint: string) => Promise<any> };
+  data?: {
+    dataSources: {
+      get: (id: string) => { get: (endpoint: string) => Promise<any> };
+    };
+  };
+}
 
 // Utility function to fetch query by id and time range
 export const retrieveQueryById = async (
@@ -45,14 +55,54 @@ export const retrieveQueryById = async (
   };
 
   try {
-    const topQueriesResponse = await Promise.any([
-      fetchMetric(`/api/top_queries/latency`),
-      fetchMetric(`/api/top_queries/cpu`),
-      fetchMetric(`/api/top_queries/memory`),
-    ]);
-    return topQueriesResponse.response.top_queries[0] || null;
+    const endpoints = [
+      `/api/top_queries/latency`,
+      `/api/top_queries/cpu`,
+      `/api/top_queries/memory`,
+    ];
+
+    for (const endpoint of endpoints) {
+      const result = await fetchMetric(endpoint);
+      if (result.response.top_queries.length > 0) {
+        return result.response.top_queries[0];
+      }
+    }
+    return null;
   } catch (error) {
     console.error('Error retrieving query details:', error);
     return null;
+  }
+};
+
+export const retrieveLiveQueries = async (
+  core: CustomCore,
+  dataSourceId?: string
+): Promise<LiveSearchQueryResponse> => {
+  const nullResponse: LiveSearchQueryResponse = {
+    ok: true,
+    response: { live_queries: [] },
+  };
+
+  const errorResponse: LiveSearchQueryResponse = {
+    ok: false,
+    response: { live_queries: [] },
+  };
+
+  try {
+    const http =
+      dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
+
+    const response: LiveSearchQueryResponse = await http.get(API_ENDPOINTS.LIVE_QUERIES);
+    const liveQueries = response?.response?.live_queries;
+
+    if (Array.isArray(liveQueries)) {
+      return response;
+    } else {
+      console.warn('No live queries found in response');
+      return nullResponse;
+    }
+  } catch (error) {
+    console.error('Error retrieving live queries:', error);
+    return errorResponse;
   }
 };
