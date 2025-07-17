@@ -73,6 +73,20 @@ const QueryInsights = ({
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const [searchText, setSearchText] = useState('');
+
+  const onSearchChange = ({ query }) => {
+    const ast = query?.ast;
+    const textClause = ast?.clauses?.find(c => c.type === 'term' && !c.field);
+
+    if (textClause) {
+      setSearchText(textClause.value.trim().toLowerCase());
+    } else {
+      setSearchText('');
+    }
+  };
+
+
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -307,10 +321,20 @@ const QueryInsights = ({
     },
   ];
   const filteredQueries = useMemo(() => {
-    return queries.filter(
-      (query) => selectedFilter.length === 0 || selectedFilter.includes(query.group_by)
+    const base = queries.filter(q =>
+      selectedFilter.length === 0 || selectedFilter.includes(q.group_by)
     );
-  }, [queries, selectedFilter]);
+
+    if (!searchText) {
+      return base;
+    }
+
+    const result = base.filter(q =>
+      q.id?.toLowerCase().includes(searchText.toLowerCase())
+    );
+    return result;
+  }, [queries, selectedFilter, searchText]);
+
 
   const defaultColumns = [
     ...baseColumns,
@@ -481,7 +505,10 @@ const QueryInsights = ({
               ),
             },
           ],
-          onChange: onChangeFilter,
+          onChange: (state) => {
+            onChangeFilter(state);
+            onSearchChange(state);
+          },
 
           toolsRight: [
             <EuiSuperDatePicker
@@ -496,6 +523,7 @@ const QueryInsights = ({
         }}
         executeQueryOptions={{
           defaultFields: [
+            'id',
             TIMESTAMP_FIELD,
             MEASUREMENTS_FIELD,
             LATENCY_FIELD,
