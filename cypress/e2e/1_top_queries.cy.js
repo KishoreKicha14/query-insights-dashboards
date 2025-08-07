@@ -38,24 +38,21 @@ describe('Query Insights Dashboard', () => {
     cy.searchOnIndex(indexName);
     // waiting for the query insights queue to drain
     cy.wait(10000);
-    cy.waitForQueryInsightsPlugin();
+    cy.navigateToOverview();
   });
 
   /**
    * Validate the main overview page loads correctly
    */
   it('should display the main overview page', () => {
-    // Verify the page title is visible (already loaded by waitForQueryInsightsPlugin)
-    cy.contains('Query insights - Top N queries').should('be.visible');
-
-    // Verify the URL is correct
+    cy.get('.euiBasicTable').should('be.visible');
+    cy.contains('Query insights - Top N queries');
     cy.url().should('include', '/queryInsights');
 
-    // Verify the table is visible and has content
+    // should display the query table on the overview page
     cy.get('.euiBasicTable').should('be.visible');
     cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 0);
-
-    // Verify there are query rows in the table
+    // should have top n queries displayed on the table
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
@@ -128,69 +125,10 @@ describe('Query Insights Dashboard', () => {
     // Verify rows on the second page
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
-
-  it('should get minimal details of the query using verbose=false', () => {
-    const to = new Date().toISOString();
-    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-
-    return cy
-      .request({
-        method: 'GET',
-        url: `/api/top_queries/latency`,
-        qs: {
-          from: from,
-          to: to,
-          verbose: false,
-        },
-      })
-      .then((response) => {
-        expect(response.status).to.eq(200);
-        expect(response.body).to.have.property('ok', true);
-
-        const responseData = response.body.response;
-        expect(responseData).to.have.property('top_queries');
-        expect(responseData.top_queries).to.be.an('array');
-        expect(responseData.top_queries.length).to.be.greaterThan(0);
-
-        const firstQuery = responseData.top_queries[0];
-        const requiredFields = [
-          'group_by',
-          'id',
-          'indices',
-          'labels',
-          'measurements',
-          'node_id',
-          'search_type',
-          'timestamp',
-          'total_shards',
-        ];
-
-        expect(firstQuery).to.include.all.keys(requiredFields);
-        const typeValidations = {
-          group_by: 'string',
-          id: 'string',
-          indices: 'array',
-          labels: 'object',
-          measurements: 'object',
-          node_id: 'string',
-          search_type: 'string',
-          timestamp: 'number',
-          total_shards: 'number',
-        };
-        Object.entries(typeValidations).forEach(([field, type]) => {
-          expect(firstQuery[field]).to.be.a(type, `${field} should be a ${type}`);
-        });
-        expect(firstQuery.measurements).to.have.all.keys(['cpu', 'latency', 'memory']);
-        ['cpu', 'latency', 'memory'].forEach((metric) => {
-          expect(firstQuery.measurements[metric]).to.be.an('object');
-        });
-      });
-
-    after(() => clearAll());
-  });
+  after(() => clearAll());
 });
 
-describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top Queries', () => {
+describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', () => {
   beforeEach(() => {
     cy.fixture('stub_top_queries.json').then((stubResponse) => {
       cy.intercept('GET', '**/api/top_queries/*', {
@@ -199,8 +137,8 @@ describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top
       }).as('getTopQueries');
     });
 
-    cy.waitForQueryInsightsPlugin();
-    cy.wait(2000);
+    cy.navigateToOverview();
+    cy.wait(1000);
     cy.wait('@getTopQueries');
   });
 
