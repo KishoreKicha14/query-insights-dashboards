@@ -5,7 +5,7 @@
       {
         "timestamp": 1749187466964,
         "id": "node-A1B2C3D4E5:3600",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"match_all\":{}},\"size\":10}]",
         "node_id": "node-A1B2C3D4E5",
         "is_cancelled": true,
         "wlm_group_id": "ANALYTICS_WORKLOAD_GROUP",
@@ -30,7 +30,7 @@
       {
         "timestamp": 1749187466969,
         "id": "4W2VTHIgQY-oB7dSrYz4B:3601",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"bool\":{\"must\":[{\"range\":{\"timestamp\":{\"gte\":\"2025-06-06\"}}}]}},\"size\":20}]",
         "node_id": "4W2VTHIgQY-oB7dSrYz4B",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -55,7 +55,7 @@
       {
         "timestamp": 1749187466974,
         "id": "node-X9Y8Z7W6:3602",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"term\":{\"category\":\"search\"}},\"aggs\":{\"avg_score\":{\"avg\":{\"field\":\"score\"}}}}]",
         "node_id": "node-X9Y8Z7W6",
         "is_cancelled": false,
         "wlm_group_id": "ANALYTICS_WORKLOAD_GROUP",
@@ -80,7 +80,7 @@
       {
         "timestamp": 1749187466979,
         "id": "node-P0Q9R8S7:3603",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"wildcard\":{\"title\":\"*search*\"}},\"highlight\":{\"fields\":{\"title\":{}}}}]",
         "node_id": "node-P0Q9R8S7",
         "is_cancelled": false,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -105,7 +105,7 @@
       {
         "timestamp": 1749187466984,
         "id": "4W2VTHIgQY-oB7dSrYz4:3604",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"multi_match\":{\"query\":\"elasticsearch\",\"fields\":[\"title\",\"content\"]}},\"from\":0,\"size\":50}]",
         "node_id": "4W2VTHIgQY-oB7dSrYz4",
         "is_cancelled": false,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -130,7 +130,7 @@
       {
         "timestamp": 1749187466989,
         "id": "node-M2O3P4Q5:3605",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"bool\":{\"filter\":[{\"term\":{\"status\":\"published\"}}],\"must\":[{\"match\":{\"content\":\"analytics\"}}]}},\"sort\":[{\"date\":{\"order\":\"desc\"}}]}]",
         "node_id": "node-M2O3P4Q5",
         "is_cancelled": true,
         "wlm_group_id": "SEARCH_WORKLOAD_GROUP",
@@ -155,7 +155,7 @@
       {
         "timestamp": 1749187466994,
         "id": "node-B2C3D4E5:3606",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"range\":{\"price\":{\"gte\":100,\"lte\":500}}},\"aggs\":{\"price_ranges\":{\"range\":{\"field\":\"price\",\"ranges\":[{\"to\":100},{\"from\":100,\"to\":500},{\"from\":500}]}}}}]",
         "node_id": "node-B2C3D4E5",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -180,7 +180,7 @@
       {
         "timestamp": 1749187466999,
         "id": "node-N2O3P4Q5:3607",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"fuzzy\":{\"name\":{\"value\":\"opensearch\",\"fuzziness\":\"AUTO\"}}},\"_source\":[\"name\",\"description\",\"tags\"]}]",
         "node_id": "node-N2O3P4Q5",
         "is_cancelled": false,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -205,7 +205,7 @@
       {
         "timestamp": 1749187467004,
         "id": "2VTHIgQY-oB7dSrYz4BQ:3608",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"nested\":{\"path\":\"comments\",\"query\":{\"bool\":{\"must\":[{\"match\":{\"comments.author\":\"admin\"}},{\"range\":{\"comments.date\":{\"gte\":\"2025-01-01\"}}}]}}}},\"size\":25}]",
         "node_id": "2VTHIgQY-oB7dSrYz4BQ",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -230,7 +230,7 @@
       {
         "timestamp": 1749187467009,
         "id": "node-X9Y8Z7W6V5:3609",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"bool\":{\"should\":[{\"match\":{\"title\":\"machine learning\"}},{\"match\":{\"content\":\"AI\"}}],\"minimum_should_match\":1}},\"highlight\":{\"fields\":{\"title\":{},\"content\":{}}}}]",
         "node_id": "node-X9Y8Z7W6V5",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -255,7 +255,7 @@
       {
         "timestamp": 1749187467014,
         "id": "de-M1N2O3P4Q5:3610",
-        "description": "indices[opensearch], search_type[Query_THEN_FETCH]",
+        "description": "indices[opensearch], search_type[Query_THEN_FETCH], source[{\"query\":{\"term\":{\"status\":\"active\"}},\"sort\":[{\"timestamp\":{\"order\":\"desc\"}}]}]",
         "node_id": "de-M1N2O3P4Q5",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -280,7 +280,7 @@
       {
         "timestamp": 1749187467019,
         "id": "no-P0Q9R8S7T6:3611",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"geo_distance\":{\"distance\":\"10km\",\"location\":{\"lat\":40.7128,\"lon\":-74.0060}}},\"sort\":[{\"_geo_distance\":{\"location\":{\"lat\":40.7128,\"lon\":-74.0060},\"order\":\"asc\",\"unit\":\"km\"}}]}]",
         "node_id": "no-P0Q9R8S7T6",
         "is_cancelled": false,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -305,7 +305,7 @@
       {
         "timestamp": 1749187467024,
         "id": "4WTHIgQY-oB7dSrYz4BQ:3612",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"prefix\":{\"category\":\"tech\"}},\"aggs\":{\"categories\":{\"terms\":{\"field\":\"category.keyword\",\"size\":10}}},\"size\":0}]",
         "node_id": "4WTHIgQY-oB7dSrYz4BQ",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -330,7 +330,7 @@
       {
         "timestamp": 1749187467029,
         "id": "4W2VTHQY-oB7dSrYz4BQ:3613",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"regexp\":{\"title\":\".*search.*\"}},\"post_filter\":{\"range\":{\"publish_date\":{\"gte\":\"2025-01-01\"}}},\"from\":10,\"size\":10}]",
         "node_id": "4W2VTHQY-oB7dSrYz4BQ",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -355,7 +355,7 @@
       {
         "timestamp": 1749187467034,
         "id": "node-A1B2C4E5:3614",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"bool\":{\"must\":[{\"match\":{\"title\":\"opensearch\"}},{\"range\":{\"views\":{\"gte\":1000}}}],\"must_not\":[{\"term\":{\"status\":\"deleted\"}}]}},\"aggs\":{\"top_tags\":{\"terms\":{\"field\":\"tags.keyword\",\"size\":5}}}}]",
         "node_id": "node-A1B2C4E5",
         "is_cancelled": false,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -380,7 +380,7 @@
       {
         "timestamp": 1749187467039,
         "id": "node-X8Z7W6V5:3615",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"exists\":{\"field\":\"description\"}},\"aggs\":{\"avg_rating\":{\"avg\":{\"field\":\"rating\"}},\"date_histogram\":{\"date_histogram\":{\"field\":\"created_at\",\"calendar_interval\":\"month\"}}}}]",
         "node_id": "node-X8Z7W6V5",
         "is_cancelled": false,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -405,7 +405,7 @@
       {
         "timestamp": 1749187467044,
         "id": "node-M1N2P4Q5:3616",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"script\":{\"script\":{\"source\":\"doc['price'].value * params.factor\",\"params\":{\"factor\":1.2}}}},\"sort\":[{\"_script\":{\"type\":\"number\",\"script\":{\"source\":\"doc['price'].value * params.factor\",\"params\":{\"factor\":1.2}},\"order\":\"desc\"}}]}]",
         "node_id": "node-M1N2P4Q5",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -430,7 +430,7 @@
       {
         "timestamp": 1749187467049,
         "id": "node-A1B2C3E5:3617",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"function_score\":{\"query\":{\"match\":{\"content\":\"elasticsearch\"}},\"functions\":[{\"filter\":{\"match\":{\"category\":\"tutorial\"}},\"weight\":2}],\"score_mode\":\"multiply\"}},\"min_score\":0.5}]",
         "node_id": "node-A1B2C3E5",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -455,7 +455,7 @@
       {
         "timestamp": 1749187467054,
         "id": "4W2VTHIgQY-7dSrYz4BQ:3618",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"constant_score\":{\"filter\":{\"bool\":{\"should\":[{\"term\":{\"category\":\"news\"}},{\"term\":{\"category\":\"blog\"}}]}},\"boost\":1.2}},\"collapse\":{\"field\":\"author.keyword\"}}]",
         "node_id": "4W2VTHIgQY-7dSrYz4BQ",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",
@@ -480,7 +480,7 @@
       {
         "timestamp": 1749187467059,
         "id": "node-A1B2C3D4E5:3619",
-        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
+        "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH], source[{\"query\":{\"dis_max\":{\"queries\":[{\"match\":{\"title\":\"search engine\"}},{\"match\":{\"content\":\"search engine\"}}],\"tie_breaker\":0.3}},\"rescore\":{\"window_size\":50,\"query\":{\"rescore_query\":{\"match_phrase\":{\"content\":\"search engine\"}},\"query_weight\":0.7,\"rescore_query_weight\":1.2}}}]",
         "node_id": "node-A1B2C3D4E5",
         "is_cancelled": true,
         "wlm_group_id": "DEFAULT_QUERY_GROUP",

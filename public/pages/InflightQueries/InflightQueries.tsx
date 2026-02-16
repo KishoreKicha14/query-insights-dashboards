@@ -51,6 +51,7 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import { TaskDetailsFlyout } from '../../components/TaskDetailsFlyout';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -432,11 +433,69 @@ export const InflightQueries = ({
 
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
+  // Task details flyout state
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskDetails, setTaskDetails] = useState<Record<string, unknown> | null>(null);
+  const [taskDetailsLoading, setTaskDetailsLoading] = useState(false);
+  const [taskDetailsError, setTaskDetailsError] = useState<string | null>(null);
+
   const selection = {
     selectable: (item: any) => item.is_cancelled !== true,
     onSelectionChange: (selected: any[]) => {
       setSelectedItems(selected);
     },
+  };
+
+  const fetchTaskDetails = useCallback(async (taskId: string) => {
+    setTaskDetailsLoading(true);
+    setTaskDetailsError(null);
+    try {
+      // Find the task in current live queries
+      const task = liveQueries.find(q => q.id === taskId);
+      if (task) {
+        setTaskDetails(task);
+      } else {
+        setTaskDetailsError(`Task with ID '${taskId}' not found in current live queries`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setTaskDetailsError(`Failed to fetch task details: ${errorMessage}`);
+    } finally {
+      setTaskDetailsLoading(false);
+    }
+  }, [liveQueries]);
+
+  const handleTaskIdClick = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setFlyoutOpen(true);
+    fetchTaskDetails(taskId);
+  };
+
+  const handleFlyoutClose = () => {
+    setFlyoutOpen(false);
+    setSelectedTaskId(null);
+    setTaskDetails(null);
+    setTaskDetailsError(null);
+  };
+
+  const handleTaskRefresh = (taskId: string) => {
+    fetchTaskDetails(taskId);
+  };
+
+  const handleKillQuery = async (taskId: string) => {
+    try {
+      const httpClient = dataSource?.id
+        ? depsStart.data.dataSources.get(dataSource.id)
+        : core.http;
+      
+      await httpClient.post(API_ENDPOINTS.CANCEL_TASK(taskId));
+      handleFlyoutClose();
+      await fetchLiveQueries();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      console.error(`Failed to kill query ${taskId}:`, errorMessage);
+    }
   };
 
   const Legend = ({ data }: { data: Record<string, number> }) => (
@@ -967,7 +1026,14 @@ export const InflightQueries = ({
           }}
           columns={[
             { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
-            { field: 'id', name: 'Task ID' },
+            { 
+              name: 'Task ID',
+              render: (item) => (
+                <EuiLink onClick={() => handleTaskIdClick(item.id)} color="primary">
+                  {item.id}
+                </EuiLink>
+              )
+            },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
             {
@@ -1074,6 +1140,17 @@ export const InflightQueries = ({
           loading={!query}
         />
       </EuiPanel>
+      
+      <TaskDetailsFlyout
+        isOpen={flyoutOpen}
+        onClose={handleFlyoutClose}
+        taskId={selectedTaskId}
+        taskDetails={taskDetails}
+        loading={taskDetailsLoading}
+        error={taskDetailsError}
+        onRefresh={handleTaskRefresh}
+        onKillQuery={handleKillQuery}
+      />
     </div>
   );
 };

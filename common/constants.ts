@@ -117,3 +117,6 @@ const DEFAULT_CONFIG: ConfigSchema = {
 };
 
 export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
+
+// Time conversion constants
+export const NANOSECONDS_TO_SECONDS = 1e9;
