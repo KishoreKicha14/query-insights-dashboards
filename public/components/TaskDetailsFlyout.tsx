@@ -116,9 +116,20 @@ export const TaskDetailsFlyout: React.FC<TaskDetailsFlyoutProps> = ({
   if (!isOpen) return null;
 
   return (
-    <EuiFlyout onClose={onClose} size="l" type="overlay" ownFocus aria-labelledby="taskFlyoutTitle" data-test-subj="euiFlyout">
+    <EuiFlyout
+      onClose={onClose}
+      size="l"
+      type="overlay"
+      ownFocus
+      aria-labelledby="taskFlyoutTitle"
+      data-test-subj="euiFlyout"
+    >
       <EuiFlyoutHeader hasBorder>
-        <EuiFlexGroup justifyContent="spaceBetween" alignItems="center" style={{ paddingRight: '40px' }}>
+        <EuiFlexGroup
+          justifyContent="spaceBetween"
+          alignItems="center"
+          style={{ paddingRight: '40px' }}
+        >
           <EuiFlexItem grow={false}>
             <EuiTitle size="m">
               <h2 id="taskFlyoutTitle">Task ID - {taskId}</h2>
@@ -138,9 +149,9 @@ export const TaskDetailsFlyout: React.FC<TaskDetailsFlyoutProps> = ({
                   </EuiButton>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
-                  <EuiButton 
-                    iconType="trash" 
-                    color="danger" 
+                  <EuiButton
+                    iconType="trash"
+                    color="danger"
                     onClick={() => taskId && onKillQuery(taskId)}
                     size="s"
                   >
@@ -177,14 +188,16 @@ export const TaskDetailsFlyout: React.FC<TaskDetailsFlyoutProps> = ({
                 </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiText>
-                    <span style={{ 
-                      color: getStatusColor(taskDetails), 
-                      fontWeight: 'bold' 
-                    }}>
+                    <span
+                      style={{
+                        color: getStatusColor(taskDetails),
+                        fontWeight: 'bold',
+                      }}
+                    >
                       {getStatusText(
                         getTaskState(taskDetails),
                         getTaskState(taskDetails) === 'running' &&
-                        taskDetails?.measurements?.latency?.number
+                          taskDetails?.measurements?.latency?.number
                           ? taskDetails.measurements.latency.number / NANOSECONDS_TO_SECONDS
                           : undefined
                       )}
@@ -275,7 +288,7 @@ export const TaskDetailsFlyout: React.FC<TaskDetailsFlyoutProps> = ({
                   borderRadius: '4px',
                   overflow: 'auto',
                   fontSize: '12px',
-                  maxHeight: '400px'
+                  maxHeight: '400px',
                 }}
               >
                 {(() => {

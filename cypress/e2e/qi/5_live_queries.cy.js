@@ -341,10 +341,14 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('opens task details flyout when task ID is clicked', () => {
-    cy.get('tbody tr').first().within(() => {
-      cy.get('td').contains(/node-.*:\d+/).click();
-    });
-    
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td')
+          .contains(/node-.*:\d+/)
+          .click();
+      });
+
     cy.get('[data-test-subj="euiFlyout"]').should('be.visible');
     cy.contains('Task Summary').should('be.visible');
     cy.contains('Query Source').should('be.visible');
@@ -353,7 +357,7 @@ describe('Inflight Queries Dashboard', () => {
   it('shows refresh and kill query buttons for running tasks', () => {
     // Click on a specific running task ID
     cy.contains('node-X9Y8Z7W6:3602').click({ force: true });
-    
+
     cy.get('[data-test-subj="euiFlyout"]').within(() => {
       cy.contains('Running').should('be.visible');
       cy.contains('button', 'Refresh').should('be.visible');
@@ -364,7 +368,7 @@ describe('Inflight Queries Dashboard', () => {
   it('does not show buttons for cancelled tasks', () => {
     // Click on a specific cancelled task ID
     cy.contains('node-A1B2C3D4E5:3600').click({ force: true });
-    
+
     cy.get('[data-test-subj="euiFlyout"]').within(() => {
       cy.contains('Cancelled').should('be.visible');
       cy.contains('button', 'Refresh').should('not.exist');
@@ -373,10 +377,14 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('closes flyout when close button is clicked', () => {
-    cy.get('tbody tr').first().within(() => {
-      cy.get('td').contains(/node-.*:\d+/).click();
-    });
-    
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td')
+          .contains(/node-.*:\d+/)
+          .click();
+      });
+
     cy.get('[data-test-subj="euiFlyout"]').should('be.visible');
     cy.get('[data-test-subj="euiFlyoutCloseButton"]').click();
     cy.get('[data-test-subj="euiFlyout"]').should('not.exist');

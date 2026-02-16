@@ -635,9 +635,9 @@ describe('InflightQueries', () => {
     await waitFor(() => {
       expect(screen.getByText('Task ID')).toBeInTheDocument();
     });
-    
+
     const taskIdLinks = screen.getAllByRole('link');
-    const taskIdLink = taskIdLinks.find(link => link.textContent?.includes('node-A1B2C4E5:3614'));
+    const taskIdLink = taskIdLinks.find((link) => link.textContent?.includes('node-A1B2C4E5:3614'));
     expect(taskIdLink).toBeTruthy();
     fireEvent.click(taskIdLink!);
 
@@ -676,22 +676,26 @@ describe('InflightQueries', () => {
     }
 
     // Verify that task ID elements are clickable (they should be rendered as links/buttons)
-    await waitFor(() => {
-      const taskIdElements = screen.getAllByText(/node-.*:\d+/);
-      expect(taskIdElements.length).toBeGreaterThan(0);
-      // Verify at least one task ID is clickable
-      const clickableTaskId = taskIdElements.find(el => 
-        el.closest('button') || el.closest('a') || el.onclick || el.style.cursor === 'pointer'
-      );
-      expect(clickableTaskId).toBeTruthy();
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        const taskIdElements = screen.getAllByText(/node-.*:\d+/);
+        expect(taskIdElements.length).toBeGreaterThan(0);
+        // Verify at least one task ID is clickable
+        const clickableTaskId = taskIdElements.find(
+          (el) =>
+            el.closest('button') || el.closest('a') || el.onclick || el.style.cursor === 'pointer'
+        );
+        expect(clickableTaskId).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('calls kill query API when kill query button is clicked', async () => {
     const core = makeCore();
     const mockPost = jest.fn().mockResolvedValue({});
     core.http.post = mockPost;
-    
+
     mockLiveQueries(mockStubLiveQueries);
 
     render(
@@ -718,14 +722,17 @@ describe('InflightQueries', () => {
     }
 
     // Verify that the table renders with actions column
-    await waitFor(() => {
-      expect(screen.getByText('Actions')).toBeInTheDocument();
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Actions')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     // Verify that task IDs are rendered and clickable (for flyout integration)
     const taskIdElements = screen.getAllByText(/node-.*:\d+/);
     expect(taskIdElements.length).toBeGreaterThan(0);
-    
+
     // Test passes if the component renders correctly with task IDs and actions column
     const taskIdHeaders = screen.getAllByText('Task ID');
     expect(taskIdHeaders.length).toBeGreaterThan(0);

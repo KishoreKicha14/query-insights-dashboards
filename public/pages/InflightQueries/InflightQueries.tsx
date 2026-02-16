@@ -447,24 +447,27 @@ export const InflightQueries = ({
     },
   };
 
-  const fetchTaskDetails = useCallback(async (taskId: string) => {
-    setTaskDetailsLoading(true);
-    setTaskDetailsError(null);
-    try {
-      // Find the task in current live queries
-      const task = liveQueries.find(q => q.id === taskId);
-      if (task) {
-        setTaskDetails(task);
-      } else {
-        setTaskDetailsError(`Task with ID '${taskId}' not found in current live queries`);
+  const fetchTaskDetails = useCallback(
+    async (taskId: string) => {
+      setTaskDetailsLoading(true);
+      setTaskDetailsError(null);
+      try {
+        // Find the task in current live queries
+        const task = liveQueries.find((q) => q.id === taskId);
+        if (task) {
+          setTaskDetails(task);
+        } else {
+          setTaskDetailsError(`Task with ID '${taskId}' not found in current live queries`);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        setTaskDetailsError(`Failed to fetch task details: ${errorMessage}`);
+      } finally {
+        setTaskDetailsLoading(false);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setTaskDetailsError(`Failed to fetch task details: ${errorMessage}`);
-    } finally {
-      setTaskDetailsLoading(false);
-    }
-  }, [liveQueries]);
+    },
+    [liveQueries]
+  );
 
   const handleTaskIdClick = (taskId: string) => {
     setSelectedTaskId(taskId);
@@ -485,10 +488,8 @@ export const InflightQueries = ({
 
   const handleKillQuery = async (taskId: string) => {
     try {
-      const httpClient = dataSource?.id
-        ? depsStart.data.dataSources.get(dataSource.id)
-        : core.http;
-      
+      const httpClient = dataSource?.id ? depsStart.data.dataSources.get(dataSource.id) : core.http;
+
       await httpClient.post(API_ENDPOINTS.CANCEL_TASK(taskId));
       handleFlyoutClose();
       await fetchLiveQueries();
@@ -1026,13 +1027,13 @@ export const InflightQueries = ({
           }}
           columns={[
             { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
-            { 
+            {
               name: 'Task ID',
               render: (item) => (
                 <EuiLink onClick={() => handleTaskIdClick(item.id)} color="primary">
                   {item.id}
                 </EuiLink>
-              )
+              ),
             },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
@@ -1140,7 +1141,7 @@ export const InflightQueries = ({
           loading={!query}
         />
       </EuiPanel>
-      
+
       <TaskDetailsFlyout
         isOpen={flyoutOpen}
         onClose={handleFlyoutClose}
