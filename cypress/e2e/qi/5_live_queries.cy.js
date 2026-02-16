@@ -391,6 +391,10 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('displays WLM group as text when WLM is disabled', () => {
-    cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
+      });
   });
 });
