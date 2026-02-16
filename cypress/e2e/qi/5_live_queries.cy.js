@@ -389,4 +389,8 @@ describe('Inflight Queries Dashboard', () => {
     cy.get('[data-test-subj="euiFlyoutCloseButton"]').click();
     cy.get('[data-test-subj="euiFlyout"]').should('not.exist');
   });
+
+  it('displays WLM group as text when WLM is disabled', () => {
+    cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
+  });
 });
