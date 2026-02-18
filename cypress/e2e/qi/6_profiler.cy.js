@@ -88,11 +88,17 @@ describe('Query Profiler', () => {
   });
 
   it('imports profile JSON and loads it into output panel', () => {
-    const profile = JSON.stringify({ profile: { shards: [{ id: '[node1][index][0]', searches: [] }] } });
+    const profile = JSON.stringify({
+      profile: { shards: [{ id: '[node1][index][0]', searches: [] }] },
+    });
     cy.contains('.euiTab', 'Import').click();
     cy.contains('Profile JSON').click();
     cy.get('input[type="file"]').selectFile(
-      { contents: Cypress.Buffer.from(profile), fileName: 'test_profile.json', mimeType: 'application/json' },
+      {
+        contents: Cypress.Buffer.from(profile),
+        fileName: 'test_profile.json',
+        mimeType: 'application/json',
+      },
       { force: true }
     );
     cy.get('[data-test-subj="importQueriesConfirmBtn"]').should('not.be.disabled').click();

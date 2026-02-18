@@ -9,7 +9,6 @@ import {
   EuiButtonEmpty,
   EuiFlexGroup,
   EuiFlexItem,
-  EuiPanel,
   EuiSpacer,
   EuiTitle,
   EuiIcon,
@@ -19,7 +18,6 @@ import {
   EuiFlyoutBody,
   EuiFlyoutFooter,
   EuiText,
-  EuiButtonIcon,
   EuiCallOut,
   EuiCompressedFilePicker,
   EuiForm,
@@ -37,11 +35,14 @@ import {
   EuiCompressedFieldNumber,
   EuiCompressedSwitch,
 } from '@elastic/eui';
-import { OpenSearchDashboardsContextProvider } from '../../../../../src/plugins/opensearch_dashboards_react/public';
-import { Panel, PanelsContainer } from '../../../../../src/plugins/opensearch_dashboards_react/public';
 import { createRoot } from 'react-dom/client';
-import { CoreStart } from '../../../../../src/core/public';
 import ace from 'brace';
+import { OpenSearchDashboardsContextProvider } from '../../../../../src/plugins/opensearch_dashboards_react/public';
+import {
+  Panel,
+  PanelsContainer,
+} from '../../../../../src/plugins/opensearch_dashboards_react/public';
+import { CoreStart } from '../../../../../src/core/public';
 import 'brace/mode/json';
 import 'brace/theme/textmate';
 
@@ -50,7 +51,11 @@ interface Props {
   coreStart: CoreStart;
 }
 
-const ImportFlyout: React.FC<{ onClose: () => void; onImportQuery: (content: string) => void; onImportResult: (content: string) => void }> = ({ onClose, onImportQuery, onImportResult }) => {
+const ImportFlyout: React.FC<{
+  onClose: () => void;
+  onImportQuery: (content: string) => void;
+  onImportResult: (content: string) => void;
+}> = ({ onClose, onImportQuery, onImportResult }) => {
   const [file, setFile] = React.useState<File>();
   const [error, setError] = React.useState<string>();
   const [importType, setImportType] = React.useState<'query' | 'result'>('query');
@@ -110,10 +115,7 @@ const ImportFlyout: React.FC<{ onClose: () => void; onImportQuery: (content: str
               onChange={(id) => setImportType(id as 'query' | 'result')}
             />
           </EuiCompressedFormRow>
-          <EuiCompressedFormRow
-            fullWidth
-            label="Select a file to import"
-          >
+          <EuiCompressedFormRow fullWidth label="Select a file to import">
             <EuiCompressedFilePicker
               accept=".json,.txt"
               fullWidth
@@ -131,7 +133,13 @@ const ImportFlyout: React.FC<{ onClose: () => void; onImportQuery: (content: str
             </EuiButtonEmpty>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
-            <EuiButton onClick={handleImport} size="s" fill disabled={!file} data-test-subj="importQueriesConfirmBtn">
+            <EuiButton
+              onClick={handleImport}
+              size="s"
+              fill
+              disabled={!file}
+              data-test-subj="importQueriesConfirmBtn"
+            >
               Import
             </EuiButton>
           </EuiFlexItem>
@@ -143,7 +151,7 @@ const ImportFlyout: React.FC<{ onClose: () => void; onImportQuery: (content: str
 
 const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
   const [input, setInput] = useState(
-`GET _search
+    `GET _search
 {
   "profile": true,
   "query": {
@@ -263,15 +271,11 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
         }),
       });
 
-      const formatted =
-        typeof response === 'string'
-          ? response
-          : JSON.stringify(response, null, 2);
+      const formatted = typeof response === 'string' ? response : JSON.stringify(response, null, 2);
 
       setOutput(formatted);
     } catch (error: any) {
-      const errorMsg =
-        error.body?.message || error.message || JSON.stringify(error, null, 2);
+      const errorMsg = error.body?.message || error.message || JSON.stringify(error, null, 2);
       setOutput(`Error: ${errorMsg}`);
     }
   };
@@ -308,187 +312,206 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
   return (
     <OpenSearchDashboardsContextProvider services={coreStart}>
       <div>
-      <EuiTabs size="s">
-        <EuiTab onClick={() => setIsSettingsOpen(true)}>Settings</EuiTab>
-        <EuiTab onClick={() => setIsImportOpen(true)}>Import</EuiTab>
-        <EuiTab onClick={exportJson}>Export JSON</EuiTab>
-        <EuiTab onClick={() => setIsHelpOpen(true)}>Help</EuiTab>
-      </EuiTabs>
+        <EuiTabs size="s">
+          <EuiTab onClick={() => setIsSettingsOpen(true)}>Settings</EuiTab>
+          <EuiTab onClick={() => setIsImportOpen(true)}>Import</EuiTab>
+          <EuiTab onClick={exportJson}>Export JSON</EuiTab>
+          <EuiTab onClick={() => setIsHelpOpen(true)}>Help</EuiTab>
+        </EuiTabs>
 
-      <div style={{ height: '400px', width: '100%', display: 'flex' }}>
-        <PanelsContainer>
-        <Panel style={{ position: 'relative', flex: 1 }} initialWidth={50}>
-          <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-            <EuiFlexGroup
-              gutterSize="none"
-              responsive={false}
-              style={{
-                position: 'absolute',
-                zIndex: 1000,
-                top: 0,
-                right: '16px',
-                lineHeight: 1,
-              }}
-            >
-              <EuiFlexItem>
-                <EuiToolTip content="Generate profile">
-                  <button
-                    onClick={() => executeQuery()}
-                    className="conApp__editorActionButton conApp__editorActionButton--success"
-                    style={{
-                      padding: '0 8px',
-                      cursor: 'pointer',
-                      lineHeight: 'inherit',
-                    }}
-                  >
-                    <EuiIcon type="play" />
-                  </button>
-                </EuiToolTip>
-              </EuiFlexItem>
-              <EuiFlexItem>
-                <EuiToolTip content="Reset all">
-                  <button
-                    onClick={() => {
-                      if (inputEditorInstance.current) {
-                        inputEditorInstance.current.setValue(
-`GET _search
+        <div style={{ height: '400px', width: '100%', display: 'flex' }}>
+          <PanelsContainer>
+            <Panel style={{ position: 'relative', flex: 1 }} initialWidth={50}>
+              <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+                <EuiFlexGroup
+                  gutterSize="none"
+                  responsive={false}
+                  style={{
+                    position: 'absolute',
+                    zIndex: 1000,
+                    top: 0,
+                    right: '16px',
+                    lineHeight: 1,
+                  }}
+                >
+                  <EuiFlexItem>
+                    <EuiToolTip content="Generate profile">
+                      <button
+                        onClick={() => executeQuery()}
+                        className="conApp__editorActionButton conApp__editorActionButton--success"
+                        style={{
+                          padding: '0 8px',
+                          cursor: 'pointer',
+                          lineHeight: 'inherit',
+                        }}
+                      >
+                        <EuiIcon type="play" />
+                      </button>
+                    </EuiToolTip>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiToolTip content="Reset all">
+                      <button
+                        onClick={() => {
+                          if (inputEditorInstance.current) {
+                            inputEditorInstance.current.setValue(
+                              `GET _search
 {
   "profile": true,
   "query": {
     "match_all": {}
   }
-}`, -1);
-                      }
-                      setOutput('');
-                    }}
-                    className="conApp__editorActionButton conApp__editorActionButton--success"
-                    style={{
-                      padding: '0 8px',
-                      cursor: 'pointer',
-                      lineHeight: 'inherit',
-                    }}
-                  >
-                    <EuiIcon type="refresh" />
-                  </button>
-                </EuiToolTip>
-              </EuiFlexItem>
-            </EuiFlexGroup>
-            <div ref={inputEditorRef} style={{ width: '100%', height: '100%' }} />
-          </div>
-        </Panel>
-        <Panel style={{ position: 'relative', flex: 1 }} initialWidth={50}>
-          <div style={{ position: 'relative', height: '100%', width: '100%', background: '#FFF' }}>
-            <div ref={outputEditorRef} style={{ width: '100%', height: '100%' }} />
-          </div>
-        </Panel>
-        </PanelsContainer>
-      </div>
+}`,
+                              -1
+                            );
+                          }
+                          setOutput('');
+                        }}
+                        className="conApp__editorActionButton conApp__editorActionButton--success"
+                        style={{
+                          padding: '0 8px',
+                          cursor: 'pointer',
+                          lineHeight: 'inherit',
+                        }}
+                      >
+                        <EuiIcon type="refresh" />
+                      </button>
+                    </EuiToolTip>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+                <div ref={inputEditorRef} style={{ width: '100%', height: '100%' }} />
+              </div>
+            </Panel>
+            <Panel style={{ position: 'relative', flex: 1 }} initialWidth={50}>
+              <div
+                style={{ position: 'relative', height: '100%', width: '100%', background: '#FFF' }}
+              >
+                <div ref={outputEditorRef} style={{ width: '100%', height: '100%' }} />
+              </div>
+            </Panel>
+          </PanelsContainer>
+        </div>
 
-      {isSettingsOpen && (
-        <EuiModal onClose={() => setIsSettingsOpen(false)}>
-          <EuiModalHeader>
-            <EuiModalHeaderTitle>
+        {isSettingsOpen && (
+          <EuiModal onClose={() => setIsSettingsOpen(false)}>
+            <EuiModalHeader>
+              <EuiModalHeaderTitle>
+                <EuiText size="s">
+                  <h2>Query Profiler Settings</h2>
+                </EuiText>
+              </EuiModalHeaderTitle>
+            </EuiModalHeader>
+            <EuiModalBody>
+              <EuiCompressedFormRow label="Font Size">
+                <EuiCompressedFieldNumber
+                  value={fontSize}
+                  min={6}
+                  max={50}
+                  onChange={(e) => setFontSize(parseInt(e.target.value, 10) || 14)}
+                />
+              </EuiCompressedFormRow>
+              <EuiCompressedFormRow>
+                <EuiCompressedSwitch
+                  label="Wrap long lines"
+                  checked={wrapMode}
+                  onChange={(e) => setWrapMode(e.target.checked)}
+                />
+              </EuiCompressedFormRow>
+            </EuiModalBody>
+            <EuiModalFooter>
+              <EuiSmallButtonEmpty onClick={() => setIsSettingsOpen(false)}>
+                Cancel
+              </EuiSmallButtonEmpty>
+              <EuiSmallButton fill onClick={() => setIsSettingsOpen(false)}>
+                Save
+              </EuiSmallButton>
+            </EuiModalFooter>
+          </EuiModal>
+        )}
+
+        {isImportOpen && (
+          <ImportFlyout
+            onClose={() => setIsImportOpen(false)}
+            onImportQuery={handleImportQuery}
+            onImportResult={handleImportResult}
+          />
+        )}
+
+        {isHelpOpen && (
+          <EuiFlyout onClose={() => setIsHelpOpen(false)} size="s">
+            <EuiFlyoutHeader hasBorder>
+              <EuiTitle size="s">
+                <h2>Query Profiler Help</h2>
+              </EuiTitle>
+            </EuiFlyoutHeader>
+            <EuiFlyoutBody>
               <EuiText size="s">
-                <h2>Query Profiler Settings</h2>
-              </EuiText>
-            </EuiModalHeaderTitle>
-          </EuiModalHeader>
-          <EuiModalBody>
-            <EuiCompressedFormRow label="Font Size">
-              <EuiCompressedFieldNumber 
-                value={fontSize} 
-                min={6} 
-                max={50} 
-                onChange={(e) => setFontSize(parseInt(e.target.value, 10) || 14)}
-              />
-            </EuiCompressedFormRow>
-            <EuiCompressedFormRow>
-              <EuiCompressedSwitch 
-                label="Wrap long lines" 
-                checked={wrapMode} 
-                onChange={(e) => setWrapMode(e.target.checked)} 
-              />
-            </EuiCompressedFormRow>
-          </EuiModalBody>
-          <EuiModalFooter>
-            <EuiSmallButtonEmpty onClick={() => setIsSettingsOpen(false)}>
-              Cancel
-            </EuiSmallButtonEmpty>
-            <EuiSmallButton fill onClick={() => setIsSettingsOpen(false)}>
-              Save
-            </EuiSmallButton>
-          </EuiModalFooter>
-        </EuiModal>
-      )}
+                <h3>About Query Profiler</h3>
+                <p>
+                  The Query Profiler helps you understand how OpenSearch executes your search
+                  queries by providing detailed performance metrics and execution breakdowns.
+                </p>
 
-      {isImportOpen && (
-        <ImportFlyout 
-          onClose={() => setIsImportOpen(false)} 
-          onImportQuery={handleImportQuery}
-          onImportResult={handleImportResult}
-        />
-      )}
+                <h3>How to Use</h3>
+                <p>
+                  1. Enter your search query in the left editor panel
+                  <br />
+                  2. Click the play button to execute and generate profile
+                  <br />
+                  3. View the profiling results in the right panel
+                  <br />
+                  4. Use the reset button to clear both query and results
+                </p>
 
-      {isHelpOpen && (
-        <EuiFlyout onClose={() => setIsHelpOpen(false)} size="s">
-          <EuiFlyoutHeader hasBorder>
-            <EuiTitle size="s">
-              <h2>Query Profiler Help</h2>
-            </EuiTitle>
-          </EuiFlyoutHeader>
-          <EuiFlyoutBody>
-            <EuiText size="s">
-              <h3>About Query Profiler</h3>
-              <p>
-                The Query Profiler helps you understand how OpenSearch executes your search queries
-                by providing detailed performance metrics and execution breakdowns.
-              </p>
-
-              <h3>How to Use</h3>
-              <p>
-                1. Enter your search query in the left editor panel<br />
-                2. Click the play button to execute and generate profile<br />
-                3. View the profiling results in the right panel<br />
-                4. Use the reset button to clear both query and results
-              </p>
-
-              <h3>Query Format</h3>
-              <p>
-                Queries should follow this format:
-              </p>
-              <pre style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
-{`GET _search
+                <h3>Query Format</h3>
+                <p>Queries should follow this format:</p>
+                <pre style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
+                  {`GET _search
 {
   "query": {
     "match_all": {}
   }
 }`}
-              </pre>
+                </pre>
 
-              <h3>Features</h3>
-              <dl>
-                <dt><strong>Settings</strong></dt>
-                <dd>Customize font size and enable line wrapping for better readability</dd>
-                <dt><strong>Import</strong></dt>
-                <dd>Load search queries or profile JSON results. Choose "Search query" to import to the left editor or "Profile JSON" to import to the right panel</dd>
-                <dt><strong>Export JSON</strong></dt>
-                <dd>Save profiling results as profile.json for later analysis or sharing</dd>
-                <dt><strong>Auto-profiling</strong></dt>
-                <dd>The profiler automatically adds "profile": true to your queries</dd>
-                <dt><strong>Reset All</strong></dt>
-                <dd>Clear both query input and profiling results to start fresh</dd>
-              </dl>
+                <h3>Features</h3>
+                <dl>
+                  <dt>
+                    <strong>Settings</strong>
+                  </dt>
+                  <dd>Customize font size and enable line wrapping for better readability</dd>
+                  <dt>
+                    <strong>Import</strong>
+                  </dt>
+                  <dd>
+                    Load search queries or profile JSON results. Choose &quot;Search query&quot; to
+                    import to the left editor or &quot;Profile JSON&quot; to import to the right
+                    panel
+                  </dd>
+                  <dt>
+                    <strong>Export JSON</strong>
+                  </dt>
+                  <dd>Save profiling results as profile.json for later analysis or sharing</dd>
+                  <dt>
+                    <strong>Auto-profiling</strong>
+                  </dt>
+                  <dd>The profiler automatically adds &quot;profile&quot;: true to your queries</dd>
+                  <dt>
+                    <strong>Reset All</strong>
+                  </dt>
+                  <dd>Clear both query input and profiling results to start fresh</dd>
+                </dl>
 
-              <h3>Keyboard Shortcuts</h3>
-              <dl>
-                <dt>Ctrl/Cmd + Enter</dt>
-                <dd>Execute the current query</dd>
-              </dl>
-            </EuiText>
-          </EuiFlyoutBody>
-        </EuiFlyout>
-      )}
-    </div>
+                <h3>Keyboard Shortcuts</h3>
+                <dl>
+                  <dt>Ctrl/Cmd + Enter</dt>
+                  <dd>Execute the current query</dd>
+                </dl>
+              </EuiText>
+            </EuiFlyoutBody>
+          </EuiFlyout>
+        )}
+      </div>
     </OpenSearchDashboardsContextProvider>
   );
 };

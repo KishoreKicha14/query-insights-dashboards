@@ -57,7 +57,7 @@ describe('QueryInsightsDashboardsPlugin', () => {
         description: expect.any(String),
       })
     );
-    
+
     expect(devToolsMock.register).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'queryProfiler',

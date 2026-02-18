@@ -104,10 +104,15 @@ describe('Profiler', () => {
     await waitFor(() => {
       expect(container.querySelector('.conApp__editorActionButton--success')).toBeTruthy();
     });
-    const playButton = container.querySelector('.conApp__editorActionButton--success') as HTMLElement;
+    const playButton = container.querySelector(
+      '.conApp__editorActionButton--success'
+    ) as HTMLElement;
     act(() => fireEvent.click(playButton));
     await waitFor(() => {
-      expect(mockCoreStart.http.post).toHaveBeenCalledWith('/api/profiler-proxy', expect.any(Object));
+      expect(mockCoreStart.http.post).toHaveBeenCalledWith(
+        '/api/profiler-proxy',
+        expect.any(Object)
+      );
     });
     act(() => unmount());
   });
@@ -117,7 +122,9 @@ describe('Profiler', () => {
     await waitFor(() => {
       expect(container.querySelectorAll('.conApp__editorActionButton--success').length).toBe(2);
     });
-    const resetButton = container.querySelectorAll('.conApp__editorActionButton--success')[1] as HTMLElement;
+    const resetButton = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[1] as HTMLElement;
     act(() => fireEvent.click(resetButton));
     expect(resetButton).toBeTruthy();
     act(() => unmount());
