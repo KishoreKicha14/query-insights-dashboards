@@ -14,6 +14,7 @@ window.URL = {
   createObjectURL: () => {
     return '';
   },
+  revokeObjectURL: (url: string) => {},
 };
 
 // Mock matchMedia for Monaco editor
