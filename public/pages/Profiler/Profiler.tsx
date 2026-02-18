@@ -281,7 +281,6 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
   };
 
   const exportJson = () => {
-    if (!output) return;
     const blob = new Blob([output], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -525,9 +524,7 @@ export const setCoreStart = (core: CoreStart) => {
 let root: any = null;
 
 export const renderProfiler = (element: HTMLElement) => {
-  if (!root) {
-    root = createRoot(element);
-  }
+  root = createRoot(element);
   root.render(<ConsoleProfiler http={coreStart.http} coreStart={coreStart} />);
 
   return () => {
