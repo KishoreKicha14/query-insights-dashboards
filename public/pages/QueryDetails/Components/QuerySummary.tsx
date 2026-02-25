@@ -13,6 +13,7 @@ import {
   EuiDescriptionList,
 } from '@elastic/eui';
 import { SearchQueryRecord } from '../../../../types/types';
+import { EuiBadge } from '@elastic/eui';
 import {
   CPU_TIME,
   INDICES,
@@ -22,6 +23,7 @@ import {
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
+  WLM_GROUP,
 } from '../../../../common/constants';
 import { calculateMetric } from '../../../../common/utils/MetricUtils';
 
@@ -58,7 +60,7 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord | null }) => {
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const { timestamp, measurements, indices, search_type, node_id, total_shards } = query;
+  const { timestamp, measurements, indices, search_type, node_id, total_shards, wlm_group_id } = query;
   return (
     <EuiPanel data-test-subj={'query-details-summary-section'}>
       <EuiTitle size="s">
@@ -83,6 +85,18 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord | null }) => {
         <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
         <PanelItem label={NODE_ID} value={node_id} />
         <PanelItem label={TOTAL_SHARDS} value={total_shards} />
+        {wlm_group_id && <PanelItem label={WLM_GROUP} value={wlm_group_id} />}
+        <EuiFlexItem>
+          <EuiDescriptionList
+            compressed={true}
+            listItems={[{
+              title: <h4>Status</h4>,
+              description: query.failed
+                ? <EuiBadge color="danger">Failed</EuiBadge>
+                : <EuiBadge color="success">Completed</EuiBadge>,
+            }]}
+          />
+        </EuiFlexItem>
       </EuiFlexGrid>
     </EuiPanel>
   );

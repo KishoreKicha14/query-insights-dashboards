@@ -68,6 +68,7 @@ export const DEFAULT_GROUP_BY = 'none';
 export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';
 export const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
+export const NANOSECONDS_TO_SECONDS = 1e9;
 export const TOP_N_DISPLAY_LIMIT = 9;
 export const DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR = false;
 export const WLM_GROUP_ID_PARAM = 'wlmGroupId';

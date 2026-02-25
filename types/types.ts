@@ -7,6 +7,7 @@ import { ISearchSource } from 'src/plugins/data/public';
 
 export interface SearchQueryRecord {
   timestamp: number;
+  failed: boolean;
   measurements: {
     latency?: Measurement;
     cpu?: Measurement;
@@ -73,6 +74,7 @@ export interface LiveSearchQueryRecord {
   timestamp: number;
   id: string;
   description: string;
+  source?: string;
   measurements: {
     latency?: Measurement;
     cpu?: Measurement;
@@ -80,12 +82,41 @@ export interface LiveSearchQueryRecord {
   };
   node_id: string;
   is_cancelled: boolean;
-  wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
+  wlm_group_id?: string;
+  // 3.6+ fields
+  status?: string;
+  start_time?: number;
+  total_latency_millis?: number;
+  total_cpu_nanos?: number;
+  total_memory_bytes?: number;
+  coordinator_task?: {
+    task_id: string;
+    node_id: string;
+    action: string;
+    status: string;
+    description: string;
+    start_time: number;
+    running_time_nanos: number;
+    cpu_nanos: number;
+    memory_bytes: number;
+  };
+  shard_tasks?: Array<{
+    task_id: string;
+    node_id: string;
+    action: string;
+    status: string;
+    description: string;
+    start_time: number;
+    running_time_nanos: number;
+    cpu_nanos: number;
+    memory_bytes: number;
+  }>;
 }
 
 export interface LiveSearchQueryResponse {
   ok: boolean;
   response: {
     live_queries: LiveSearchQueryRecord[];
+    finished_queries?: LiveSearchQueryRecord[];
   };
 }

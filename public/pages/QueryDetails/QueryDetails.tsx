@@ -7,7 +7,9 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
 import {
+  EuiInMemoryTable,
   EuiCodeBlock,
+  EuiDescriptionList,
   EuiFlexGrid,
   EuiFlexGroup,
   EuiFlexItem,
@@ -16,6 +18,7 @@ import {
   EuiSpacer,
   EuiTitle,
 } from '@elastic/eui';
+import { Task } from '../../../types/types';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
@@ -131,6 +134,61 @@ const QueryDetails = ({
     }
   }, [query, history, core.chrome, convertTime, initPlotlyChart]);
 
+  const PHASE_DISPLAY: Record<string, string> = {
+    can_match: 'Can Match',
+    dfs_pre_query: 'DFS Pre-Query',
+    dfs_query: 'DFS Query',
+    dfs: 'DFS',
+    query: 'Query',
+    'fetch/id': 'Fetch (ID)',
+    'fetch/scroll': 'Fetch (Scroll)',
+    fetch: 'Fetch',
+    expand: 'Expand',
+  };
+
+  const renderCoordinatorSummary = (task: Task) => (
+    <EuiFlexGrid columns={4}>
+      {[
+        { title: 'Task ID', description: task.taskId },
+        { title: 'Node ID', description: task.nodeId },
+        { title: 'CPU Time (ms)', description: (task.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2) },
+        { title: 'Memory (bytes)', description: task.taskResourceUsage.memory_in_bytes },
+      ].map(({ title, description }) => (
+        <EuiFlexItem key={title}>
+          <EuiDescriptionList
+            compressed
+            listItems={[{ title: <h4>{title}</h4>, description }]}
+          />
+        </EuiFlexItem>
+      ))}
+    </EuiFlexGrid>
+  );
+
+  const shardColumns = [
+    {
+      field: 'action',
+      name: 'Phase',
+      truncateText: true,
+      render: (action: string) => {
+        const match = action.match(/\[([^\]]+)\]/);
+        const raw = match ? match[1].replace('phase/', '') : action;
+        return PHASE_DISPLAY[raw] ?? raw;
+      },
+    },
+    { field: 'taskId', name: 'Task ID' },
+    { field: 'nodeId', name: 'Node ID', truncateText: true },
+    {
+      field: 'taskResourceUsage',
+      name: 'CPU Time (ms)',
+      render: (u: Task['taskResourceUsage']) => (u.cpu_time_in_nanos / 1e6).toFixed(2),
+    },
+    {
+      field: 'taskResourceUsage',
+      name: 'Memory (bytes)',
+      render: (u: Task['taskResourceUsage']) => u.memory_in_bytes,
+    },
+  ];
+
   const queryDisplay = formatQueryDisplay(query);
 
   return (
@@ -161,6 +219,35 @@ const QueryDetails = ({
       <EuiFlexItem>
         <QuerySummary query={query} />
         <EuiSpacer size="m" />
+        {query?.task_resource_usages?.length > 0 && (
+          <>
+            <EuiPanel data-test-subj={'query-details-task-resource-usages'}>
+              <EuiTitle size="s">
+                <h2>Task Resource Usage</h2>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiTitle size="xs">
+                <h3>Coordinator Task</h3>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              {query.task_resource_usages
+                .filter((t) => t.parentTaskId === -1)
+                .map((t) => renderCoordinatorSummary(t))}
+              <EuiSpacer size="m" />
+              <EuiTitle size="xs">
+                <h3>Shard Tasks</h3>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiInMemoryTable
+                items={query.task_resource_usages.filter((t) => t.parentTaskId !== -1)}
+                columns={shardColumns}
+                itemId="taskId"
+                pagination={{ initialPageSize: 10, showPerPageOptions: false }}
+              />
+            </EuiPanel>
+            <EuiSpacer size="m" />
+          </>
+        )}
         <EuiFlexGrid columns={2}>
           <EuiFlexItem grow={1}>
             <EuiPanel data-test-subj={'query-details-source-section'}>

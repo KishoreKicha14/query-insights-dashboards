@@ -10,6 +10,7 @@ import {
   EuiLink,
   EuiSuperDatePicker,
   EuiIcon,
+  EuiBadge,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -440,6 +441,18 @@ const QueryInsights = ({
     },
   ];
 
+  const statusColumn: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
+    {
+      name: 'Status',
+      render: (q: SearchQueryRecord) =>
+        q.failed
+          ? <EuiBadge color="danger">Failed</EuiBadge>
+          : <EuiBadge color="success">Completed</EuiBadge>,
+      sortable: (q: SearchQueryRecord) => (q.failed ? 0 : 1),
+      truncateText: true,
+    },
+  ];
+
   // columns shown only for query-type records
   const QueryTypeSpecificColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
     {
@@ -574,10 +587,11 @@ const QueryInsights = ({
       ...baseColumns,
       ...querycountColumn,
       ...timestampColumn,
+      ...statusColumn,
       ...metricColumns,
       ...QueryTypeSpecificColumns,
     ],
-    [baseColumns, querycountColumn, timestampColumn, metricColumns, QueryTypeSpecificColumns]
+    [baseColumns, querycountColumn, timestampColumn, statusColumn, metricColumns, QueryTypeSpecificColumns]
   );
   const groupTypeColumns = useMemo(() => [...baseColumns, ...querycountColumn, ...metricColumns], [
     baseColumns,
@@ -586,8 +600,8 @@ const QueryInsights = ({
   ]);
 
   const queryTypeColumns = useMemo(
-    () => [...baseColumns, ...timestampColumn, ...metricColumns, ...QueryTypeSpecificColumns],
-    [baseColumns, timestampColumn, metricColumns, QueryTypeSpecificColumns]
+    () => [...baseColumns, ...timestampColumn, ...statusColumn, ...metricColumns, ...QueryTypeSpecificColumns],
+    [baseColumns, timestampColumn, statusColumn, metricColumns, QueryTypeSpecificColumns]
   );
 
   /**
