@@ -36,10 +36,15 @@ describe('Top Queries Details Page', () => {
 
   it('should display correct details on the query details page', () => {
     cy.url().should('include', '/query-details');
+    // Validate the page title
     cy.get('h1').contains('Query details').should('be.visible');
+    // Validate the summary section
     cy.get('[data-test-subj="query-details-summary-section"]').should('be.visible');
+    // Validate the task resource usage section
     cy.get('[data-test-subj="query-details-task-resource-usages"]').should('be.visible');
+    // Validate the presence of latency chart
     cy.get('[data-test-subj="query-details-latency-chart"]').should('be.visible');
+    // Validate the presence of query source details section
     cy.get('[data-test-subj="query-details-source-section"]').should('be.visible');
   });
 
