@@ -16,6 +16,7 @@ export const NODE_ID = 'Coordinator Node ID';
 export const TOTAL_SHARDS = 'Total Shards';
 export const WLM_GROUP = 'WLM Group';
 export const GROUP_BY = 'Group by';
+export const QUERY_GROUP_HASHCODE = 'Query Group Hashcode';
 export const AVERAGE_LATENCY = 'Average Latency';
 export const AVERAGE_CPU_TIME = 'Average CPU Time';
 export const AVERAGE_MEMORY_USAGE = 'Average Memory Usage';

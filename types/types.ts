@@ -7,7 +7,6 @@ import { ISearchSource } from 'src/plugins/data/public';
 
 export interface SearchQueryRecord {
   timestamp: number;
-  failed: boolean;
   measurements: {
     latency?: Measurement;
     cpu?: Measurement;
@@ -15,8 +14,8 @@ export interface SearchQueryRecord {
   };
   total_shards: number;
   node_id: string;
-  source: ISearchSource | string; // source can be ISearchSource object for versions before 3.5 and string for versions after 3.5
-  source_truncated: boolean; // if source (as a string) is truncated
+  source: ISearchSource | string;
+  source_truncated: boolean;
   labels: Record<string, string>;
   search_type: string;
   indices: string[];
@@ -24,7 +23,10 @@ export interface SearchQueryRecord {
   task_resource_usages: Task[];
   id: string;
   group_by: string;
-  wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
+  wlm_group_id?: string;
+  username?: string;
+  user_roles?: string[];
+  failed?: boolean;
 }
 
 export interface Measurement {
@@ -74,7 +76,6 @@ export interface LiveSearchQueryRecord {
   timestamp: number;
   id: string;
   description: string;
-  source?: string;
   measurements: {
     latency?: Measurement;
     cpu?: Measurement;
@@ -83,40 +84,11 @@ export interface LiveSearchQueryRecord {
   node_id: string;
   is_cancelled: boolean;
   wlm_group_id?: string;
-  // 3.6+ fields
-  status?: string;
-  start_time?: number;
-  total_latency_millis?: number;
-  total_cpu_nanos?: number;
-  total_memory_bytes?: number;
-  coordinator_task?: {
-    task_id: string;
-    node_id: string;
-    action: string;
-    status: string;
-    description: string;
-    start_time: number;
-    running_time_nanos: number;
-    cpu_nanos: number;
-    memory_bytes: number;
-  };
-  shard_tasks?: Array<{
-    task_id: string;
-    node_id: string;
-    action: string;
-    status: string;
-    description: string;
-    start_time: number;
-    running_time_nanos: number;
-    cpu_nanos: number;
-    memory_bytes: number;
-  }>;
 }
 
 export interface LiveSearchQueryResponse {
   ok: boolean;
   response: {
     live_queries: LiveSearchQueryRecord[];
-    finished_queries?: LiveSearchQueryRecord[];
   };
 }

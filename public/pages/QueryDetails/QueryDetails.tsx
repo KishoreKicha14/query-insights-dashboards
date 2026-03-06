@@ -18,10 +18,10 @@ import {
   EuiSpacer,
   EuiTitle,
 } from '@elastic/eui';
-import { Task } from '../../../types/types';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
+import { Task } from '../../../types/types';
 import QuerySummary from './Components/QuerySummary';
 import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
@@ -30,8 +30,13 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { formatQueryDisplay } from '../../utils/query-formatter-utils';
-
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion35OrHigher,
+  isVersion36OrHigher,
+} from '../../utils/version-utils';
 
 const QueryDetails = ({
   core,
@@ -53,6 +58,9 @@ const QueryDetails = ({
   const verbose = Boolean(searchParams.get('verbose'));
 
   const [query, setQuery] = useState<SearchQueryRecord | null>(null);
+  const [wlmSupported, setWlmSupported] = useState(false);
+  const [statusSupported, setStatusSupported] = useState(false);
+  const [userInfoSupported, setUserInfoSupported] = useState(false);
   const history = useHistory();
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
@@ -80,6 +88,14 @@ const QueryDetails = ({
       fetchQueryDetails();
     }
   }, [id, from, to, verbose]);
+
+  useEffect(() => {
+    getVersionOnce(getDataSourceFromUrl().id || '').then((version) => {
+      setWlmSupported(isVersion33OrHigher(version));
+      setStatusSupported(isVersion36OrHigher(version));
+      setUserInfoSupported(isVersion35OrHigher(version));
+    });
+  }, [dataSource?.id]);
 
   // Initialize the Plotly chart
   const initPlotlyChart = useCallback(() => {
@@ -151,14 +167,14 @@ const QueryDetails = ({
       {[
         { title: 'Task ID', description: task.taskId },
         { title: 'Node ID', description: task.nodeId },
-        { title: 'CPU Time (ms)', description: (task.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2) },
+        {
+          title: 'CPU Time (ms)',
+          description: (task.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2),
+        },
         { title: 'Memory (bytes)', description: task.taskResourceUsage.memory_in_bytes },
       ].map(({ title, description }) => (
         <EuiFlexItem key={title}>
-          <EuiDescriptionList
-            compressed
-            listItems={[{ title: <h4>{title}</h4>, description }]}
-          />
+          <EuiDescriptionList compressed listItems={[{ title: <h4>{title}</h4>, description }]} />
         </EuiFlexItem>
       ))}
     </EuiFlexGrid>
@@ -217,7 +233,12 @@ const QueryDetails = ({
         dataSourcePickerReadOnly={true}
       />
       <EuiFlexItem>
-        <QuerySummary query={query} />
+        <QuerySummary
+          query={query}
+          wlmSupported={wlmSupported}
+          statusSupported={statusSupported}
+          userInfoSupported={userInfoSupported}
+        />
         <EuiSpacer size="m" />
         {query?.task_resource_usages?.length > 0 && (
           <>

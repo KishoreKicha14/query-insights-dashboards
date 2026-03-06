@@ -411,6 +411,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Type',
       'Query Count',
       'Timestamp',
+      'Status',
       'Avg Latency / Latency',
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
@@ -434,6 +435,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Id',
       'Type',
       'Timestamp',
+      'Status',
       'Latency',
       'CPU Time',
       'Memory Usage',
@@ -484,6 +486,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Type',
       'Query Count',
       'Timestamp',
+      'Status',
       'Avg Latency / Latency',
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
@@ -519,6 +522,7 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
       'Id',
       'Type',
       'Timestamp',
+      'Status',
       'Latency',
       'CPU Time',
       'Memory Usage',
@@ -555,6 +559,12 @@ describe('Query Insights — Dynamic Columns (GROUP ONLY fixture)', () => {
     ];
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(getRowsFromRaw(GROUP_ONLY).length);
+  });
+
+  it('renders dash in status column for group rows', () => {
+    cy.get('.euiTableRow').each(($row) => {
+      cy.wrap($row).find('.euiBadge').should('not.exist');
+    });
   });
 });
 

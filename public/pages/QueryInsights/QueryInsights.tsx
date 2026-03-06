@@ -444,11 +444,15 @@ const QueryInsights = ({
   const statusColumn: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
     {
       name: 'Status',
-      render: (q: SearchQueryRecord) =>
-        q.failed
-          ? <EuiBadge color="danger">Failed</EuiBadge>
-          : <EuiBadge color="success">Completed</EuiBadge>,
-      sortable: (q: SearchQueryRecord) => (q.failed ? 0 : 1),
+      render: (q: SearchQueryRecord) => {
+        if (q.group_by === 'SIMILARITY') return <span>-</span>;
+        return q.failed ? (
+          <EuiBadge color="danger">Failed</EuiBadge>
+        ) : (
+          <EuiBadge color="success">Completed</EuiBadge>
+        );
+      },
+      sortable: (q: SearchQueryRecord) => (q.group_by === 'SIMILARITY' ? -1 : q.failed ? 0 : 1),
       truncateText: true,
     },
   ];
@@ -591,7 +595,14 @@ const QueryInsights = ({
       ...metricColumns,
       ...QueryTypeSpecificColumns,
     ],
-    [baseColumns, querycountColumn, timestampColumn, statusColumn, metricColumns, QueryTypeSpecificColumns]
+    [
+      baseColumns,
+      querycountColumn,
+      timestampColumn,
+      statusColumn,
+      metricColumns,
+      QueryTypeSpecificColumns,
+    ]
   );
   const groupTypeColumns = useMemo(() => [...baseColumns, ...querycountColumn, ...metricColumns], [
     baseColumns,
@@ -600,7 +611,13 @@ const QueryInsights = ({
   ]);
 
   const queryTypeColumns = useMemo(
-    () => [...baseColumns, ...timestampColumn, ...statusColumn, ...metricColumns, ...QueryTypeSpecificColumns],
+    () => [
+      ...baseColumns,
+      ...timestampColumn,
+      ...statusColumn,
+      ...metricColumns,
+      ...QueryTypeSpecificColumns,
+    ],
     [baseColumns, timestampColumn, statusColumn, metricColumns, QueryTypeSpecificColumns]
   );
 

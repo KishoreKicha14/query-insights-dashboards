@@ -13,8 +13,9 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 // Mock version utilities
 jest.mock('../../utils/version-utils', () => ({
-  getVersionOnce: jest.fn().mockResolvedValue('3.3.0'),
+  getVersionOnce: jest.fn().mockResolvedValue('3.6.0'),
   isVersion33OrHigher: jest.fn().mockReturnValue(true),
+  isVersion36OrHigher: jest.fn().mockReturnValue(true),
 }));
 
 // Mock functions and data
@@ -238,6 +239,7 @@ describe('QueryInsights Component', () => {
         'Type',
         'Query Count',
         'Timestamp',
+        'Status',
         'Avg Latency / Latency',
         'Avg CPU Time / CPU Time',
         'Avg Memory Usage / Memory Usage',
@@ -290,6 +292,7 @@ describe('QueryInsights Component', () => {
           'Id',
           'Type',
           'Timestamp',
+          'Status',
           'Latency',
           'CPU Time',
           'Memory Usage',
@@ -322,6 +325,7 @@ describe('QueryInsights Component', () => {
           'Type',
           'Query Count',
           'Timestamp',
+          'Status',
           'Avg Latency / Latency',
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
@@ -375,6 +379,52 @@ describe('QueryInsights Component', () => {
         expect(mockHttp.get).toHaveBeenCalledWith('/api/_wlm/workload_group', {
           query: { dataSourceId: 'test' },
         });
+      });
+    });
+  });
+
+  describe('Status column rendering', () => {
+    const renderWithQueries = (queries: any[]) =>
+      render(
+        <MemoryRouter>
+          <DataSourceContext.Provider value={mockDataSourceContext}>
+            <QueryInsights
+              queries={queries}
+              loading={false}
+              onTimeChange={mockOnTimeChange}
+              recentlyUsedRanges={[]}
+              currStart="now-15m"
+              currEnd="now"
+              retrieveQueries={mockRetrieveQueries}
+              // @ts-ignore
+              core={mockCoreWithHttp}
+              depsStart={{} as any}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+
+    beforeEach(() => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    });
+
+    it('renders Completed badge for query row with failed=false', async () => {
+      renderWithQueries([{ ...sampleQueries[0], group_by: 'NONE', failed: false }]);
+      await waitFor(() => expect(screen.getByText('Completed')).toBeInTheDocument());
+    });
+
+    it('renders Failed badge for query row with failed=true', async () => {
+      renderWithQueries([{ ...sampleQueries[0], group_by: 'NONE', failed: true }]);
+      await waitFor(() => expect(screen.getByText('Failed')).toBeInTheDocument());
+    });
+
+    it('renders dash and no badge for group rows', async () => {
+      renderWithQueries([{ ...sampleQueries[1], group_by: 'SIMILARITY', failed: false }]);
+      await waitFor(() => {
+        expect(screen.queryByText('Completed')).not.toBeInTheDocument();
+        expect(screen.queryByText('Failed')).not.toBeInTheDocument();
       });
     });
   });
