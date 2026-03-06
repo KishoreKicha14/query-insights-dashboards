@@ -33,8 +33,17 @@ const getHeaders = () =>
       .filter(Boolean)
   );
 
-const expectSortedBy = (label, colIdx) => {
-  const extract = ($rows) =>
+const expectSortedBy = (label) => {
+  const getColIdx = () =>
+    cy.get('.euiTableHeaderCell').then(($headers) => {
+      const idx = [...$headers].findIndex((el) =>
+        Cypress.$(el).text().trim().includes(label)
+      );
+      if (idx === -1) throw new Error(`Header "${label}" not found in table`);
+      return idx;
+    });
+
+  const extract = ($rows, colIdx) =>
     [...$rows].map(($r) => {
       const txt = Cypress.$($r).find('td').eq(colIdx).text().trim();
       if (/ms|s|B|KB|MB|GB|TB/i.test(txt)) return parseFloat(txt.replace(/[^\d.]/g, '')) || 0;
@@ -45,17 +54,21 @@ const expectSortedBy = (label, colIdx) => {
     });
 
   cy.get('.euiTableHeaderCell').contains(label).click();
-  cy.get('.euiTableRow').then(($r) => {
-    const v = extract($r);
-    const asc = [...v].sort((a, b) => a - b);
-    expect(v, `${label} asc`).to.deep.equal(asc);
+  getColIdx().then((colIdx) => {
+    cy.get('.euiTableRow').then(($r) => {
+      const v = extract($r, colIdx);
+      const asc = [...v].sort((a, b) => a - b);
+      expect(v, `${label} asc`).to.deep.equal(asc);
+    });
   });
 
   cy.get('.euiTableHeaderCell').contains(label).click();
-  cy.get('.euiTableRow').then(($r) => {
-    const v = extract($r);
-    const desc = [...v].sort((a, b) => b - a);
-    expect(v, `${label} desc`).to.deep.equal(desc);
+  getColIdx().then((colIdx) => {
+    cy.get('.euiTableRow').then(($r) => {
+      const v = extract($r, colIdx);
+      const desc = [...v].sort((a, b) => b - a);
+      expect(v, `${label} desc`).to.deep.equal(desc);
+    });
   });
 };
 
@@ -423,10 +436,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     ];
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(totalRowCount);
-    expectSortedBy('Query Count', 2);
-    expectSortedBy('Avg Latency / Latency', 4);
-    expectSortedBy('Avg CPU Time / CPU Time', 5);
-    expectSortedBy('Avg Memory Usage / Memory Usage', 6);
+    expectSortedBy('Query Count');
+    expectSortedBy('Avg Latency / Latency');
+    expectSortedBy('Avg CPU Time / CPU Time');
+    expectSortedBy('Avg Memory Usage / Memory Usage');
   });
 
   it('renders query-only headers when Type=query', () => {
@@ -451,10 +464,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       .length;
     assertRowCountEquals(queryOnlyCount);
 
-    expectSortedBy('Timestamp', 2);
-    expectSortedBy('Latency', 3);
-    expectSortedBy('CPU Time', 4);
-    expectSortedBy('Memory Usage', 5);
+    expectSortedBy('Timestamp');
+    expectSortedBy('Latency');
+    expectSortedBy('CPU Time');
+    expectSortedBy('Memory Usage');
   });
 
   it('renders group-only headers when Type=group', () => {
@@ -473,10 +486,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       .length;
     assertRowCountEquals(groupOnlyCount);
 
-    expectSortedBy('Query Count', 2);
-    expectSortedBy('Average Latency', 3);
-    expectSortedBy('Average CPU Time', 4);
-    expectSortedBy('Average Memory Usage', 5);
+    expectSortedBy('Query Count');
+    expectSortedBy('Average Latency');
+    expectSortedBy('Average CPU Time');
+    expectSortedBy('Average Memory Usage');
   });
 
   it('renders combined headers when Type=both', () => {
@@ -499,10 +512,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(totalRowCount);
 
-    expectSortedBy('Query Count', 2);
-    expectSortedBy('Avg Latency / Latency', 4);
-    expectSortedBy('Avg CPU Time / CPU Time', 5);
-    expectSortedBy('Avg Memory Usage / Memory Usage', 6);
+    expectSortedBy('Query Count');
+    expectSortedBy('Avg Latency / Latency');
+    expectSortedBy('Avg CPU Time / CPU Time');
+    expectSortedBy('Avg Memory Usage / Memory Usage');
   });
 });
 
