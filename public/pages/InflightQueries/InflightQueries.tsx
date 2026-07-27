@@ -383,6 +383,35 @@ export const InflightQueries = ({
             total_failures: failures,
           });
           const allRows = [...parsed, ...finishedRows];
+          // Mark sub-queries: group by execution_id, first record is parent, rest are derived
+          const execIdGroups: Record<string, typeof allRows> = {};
+          for (const row of allRows) {
+            const execId = (row as any).labels?.['x-query-execution-id'] || (row as any).execution_id;
+            if (execId) {
+              if (!execIdGroups[execId]) execIdGroups[execId] = [];
+              execIdGroups[execId].push(row);
+            }
+          }
+          for (const [execId, group] of Object.entries(execIdGroups)) {
+            if (group.length > 1) {
+              // First record with x-query-source is the parent, rest are sub-queries
+              const parent = group.find((r: any) => r.labels?.['x-query-source']) || group[0];
+              for (const row of group) {
+                if (row !== parent) {
+                  (row as any).labels = { ...(row as any).labels, 'parent_id': parent.id };
+                }
+              }
+            } else if (group.length === 1 && (group[0] as any).labels?.['x-query-source']) {
+              // Single record SQL/PPL — create a derived DSL copy
+              const parent = group[0];
+              const derivedCopy = {
+                ...parent,
+                id: parent.id + '-dsl',
+                labels: { ...(parent as any).labels, 'parent_id': parent.id },
+              };
+              allRows.push(derivedCopy as any);
+            }
+          }
           setQuery({ ...retrieved, response: { live_queries: allRows } });
         } else {
           setFinishedQueryStats({
@@ -566,6 +595,7 @@ export const InflightQueries = ({
       { id: 'timestamp', label: 'Timestamp' },
       { id: 'task_id', label: 'Task ID', pinned: true },
       { id: 'query_source', label: 'Query Source' },
+      { id: 'derived_from', label: 'Derived From' },
       { id: 'index', label: 'Index' },
       { id: 'coordinator_node', label: 'Coordinator Node' },
       { id: 'time_elapsed', label: 'Time Elapsed' },
@@ -1172,12 +1202,31 @@ export const InflightQueries = ({
                     {
                       name: 'Query Source',
                       render: (item: any) => {
-                        const source = item.labels?.['x-query-source'];
+                        const labels = item.labels;
+                        const source = labels?.['parent_id'] ? undefined : labels?.['x-query-source'];
                         if (source === 'sql')
-                          return <EuiToolTip content={item.labels?.['x-original-query'] || 'SQL Query'}><EuiBadge color="#0079A5">SQL</EuiBadge></EuiToolTip>;
+                          return <EuiToolTip content={labels?.['x-original-query'] || 'SQL Query'}><EuiBadge color="#0079A5">SQL</EuiBadge></EuiToolTip>;
                         if (source === 'ppl')
-                          return <EuiToolTip content={item.labels?.['x-original-query'] || 'PPL Query'}><EuiBadge color="#7B61FF">PPL</EuiBadge></EuiToolTip>;
+                          return <EuiToolTip content={labels?.['x-original-query'] || 'PPL Query'}><EuiBadge color="#7B61FF">PPL</EuiBadge></EuiToolTip>;
                         return <EuiBadge color="hollow">DSL</EuiBadge>;
+                      },
+                    },
+                  ]
+                : []),
+              ...(isColumnVisible('derived_from')
+                ? [
+                    {
+                      name: 'Derived From',
+                      render: (item: any) => {
+                        const parentId = item.labels?.['parent_id'];
+                        if (!parentId) return '-';
+                        const source = item.labels?.['x-query-source'];
+                        const badge = source === 'sql' ? 'SQL' : source === 'ppl' ? 'PPL' : 'Query';
+                        return (
+                          <EuiBadge color={source === 'sql' ? '#0079A5' : source === 'ppl' ? '#7B61FF' : 'hollow'}>
+                            {badge}: {parentId}
+                          </EuiBadge>
+                        );
                       },
                     },
                   ]
@@ -1350,6 +1399,7 @@ export const InflightQueries = ({
             _totalShards: (selectedItem as any).total_shards,
             _source: (selectedItem as any).source,
             _taskResourceUsages: (selectedItem as any).task_resource_usages,
+            labels: (selectedItem as any).labels,
           };
           return (
             <TaskDetailFlyout
