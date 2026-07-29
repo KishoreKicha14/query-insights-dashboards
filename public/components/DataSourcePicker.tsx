@@ -47,6 +47,7 @@ export const DataSourceMenu = React.memo(
     const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
 
     const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
+      if (!dataSources.length || !dataSources[0]) return;
       window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
       setDataSource(dataSources[0]);
       onSelectedDataSource();
@@ -64,7 +65,7 @@ export const DataSourceMenu = React.memo(
           activeOption:
             selectedDataSource?.id || selectedDataSource?.label
               ? [selectedDataSource]
-              : [{ id: '', label: 'Local cluster' }],
+              : undefined,
           onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
           fullWidth: true,
           dataSourceFilter,

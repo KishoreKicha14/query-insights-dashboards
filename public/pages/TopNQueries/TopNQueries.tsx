@@ -116,7 +116,7 @@ const TopNQueries = ({
     const currentSharedState = sharedDataSourceState.getDataSource();
     if (currentSharedState.id || currentSharedState.label !== 'Local cluster') {
       setDataSource(currentSharedState);
-    } else if (dataSource?.id || dataSource?.label !== 'Local cluster') {
+    } else if (dataSource?.id) {
       sharedDataSourceState.setDataSource(dataSource);
     }
 
@@ -181,6 +181,7 @@ const TopNQueries = ({
   const [queries, setQueries] = useState<SearchQueryRecord[]>([]);
 
   useEffect(() => {
+    if (dataSourceManagement && !dataSourceId) return;
     let isComponentUnmounted = false;
 
     (async () => {
@@ -235,6 +236,7 @@ const TopNQueries = ({
   const retrieveQueries = useCallback(
     async (start: string, end: string) => {
       if (loading) return;
+      if (dataSourceManagement && !getDataSourceFromUrl().id) return;
       setLoading(true);
       const nullResponse = { response: { top_queries: [] } };
       const apiParams = {
@@ -328,6 +330,7 @@ const TopNQueries = ({
       newRemoteRepository: string = '',
       newRemotePath: string = ''
     ) => {
+      if (dataSourceManagement && !getDataSourceFromUrl().id) return;
       if (get) {
         try {
           // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
@@ -480,11 +483,11 @@ const TopNQueries = ({
   useEffect(() => {
     onTimeChange({ start: currStart, end: currEnd });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currStart, currEnd]);
+  }, [currStart, currEnd, dataSource]);
 
   useEffect(() => {
     retrieveQueries(currStart, currEnd);
-  }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
+  }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, dataSource, retrieveQueries]);
 
   return (
     <DataSourceContext.Provider value={{ dataSource, setDataSource: wrappedSetDataSource }}>
