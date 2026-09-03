@@ -15,7 +15,19 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 jest.mock('../../utils/version-utils', () => ({
   getVersionOnce: jest.fn().mockResolvedValue('3.6.0'),
   isVersion33OrHigher: jest.fn().mockReturnValue(true),
+  isVersion35OrHigher: jest.fn().mockReturnValue(true),
   isVersion36OrHigher: jest.fn().mockReturnValue(true),
+}));
+
+// Security plugin probe: default to available so user-info columns render deterministically
+// and the async probe doesn't leak state updates across tests.
+jest.mock('../../utils/datasource-utils', () => ({
+  getSecurityPluginStatus: jest.fn().mockResolvedValue('available'),
+}));
+
+// Security plugin probe: default to available so user-info columns render deterministically.
+jest.mock('../../utils/datasource-utils', () => ({
+  getSecurityPluginStatus: jest.fn().mockResolvedValue('available'),
 }));
 
 // Mock functions and data
@@ -124,6 +136,7 @@ describe('QueryInsights Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorage.clear();
   });
 
   describe('WLM group URL parameter extraction', () => {
@@ -156,8 +169,23 @@ describe('QueryInsights Component', () => {
     });
   });
 
-  it('renders the table with the correct columns and data', () => {
-    const { container } = renderQueryInsights();
+  it('renders the table with the correct columns and data', async () => {
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = renderQueryInsights());
+    });
+    // Wait for the version + security probes to resolve so the snapshot captures the gated
+    // user-info / X-Opaque-Id columns and their cell values rather than the pre-probe table.
+    await waitFor(() => {
+      const tables = screen.getAllByRole('table');
+      const mainTable = tables[tables.length - 1];
+      const headerTexts = within(mainTable)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent?.trim());
+      expect(headerTexts).toContain('X-Opaque-Id');
+      expect(headerTexts).toContain('Username');
+      expect(headerTexts).toContain('Backend Roles');
+    });
     expect(container).toMatchSnapshot();
   });
 
@@ -252,6 +280,10 @@ describe('QueryInsights Component', () => {
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
           'Indices',
+          'X-Opaque-Id',
+          'Username',
+          'User Roles',
+          'Backend Roles',
           'WLM Group',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
@@ -304,6 +336,10 @@ describe('QueryInsights Component', () => {
           'CPU Time',
           'Memory Usage',
           'Indices',
+          'X-Opaque-Id',
+          'Username',
+          'User Roles',
+          'Backend Roles',
           'WLM Group',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
@@ -334,6 +370,10 @@ describe('QueryInsights Component', () => {
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
           'Indices',
+          'X-Opaque-Id',
+          'Username',
+          'User Roles',
+          'Backend Roles',
           'WLM Group',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
@@ -802,6 +842,7 @@ describe('QueryInsights - Column Visibility Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorage.clear();
     mockHttp.get.mockResolvedValue({ workload_groups: [] });
   });
 

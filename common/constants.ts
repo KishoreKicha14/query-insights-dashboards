@@ -15,6 +15,10 @@ export const SEARCH_TYPE = 'Search Type';
 export const NODE_ID = 'Coordinator Node ID';
 export const TOTAL_SHARDS = 'Total Shards';
 export const WLM_GROUP = 'WLM Group';
+export const OPAQUE_ID = 'X-Opaque-Id';
+export const USERNAME = 'Username';
+export const USER_ROLES = 'User Roles';
+export const BACKEND_ROLES = 'Backend Roles';
 export const GROUP_BY = 'Group by';
 export const QUERY_GROUP_HASHCODE = 'Query Group Hashcode';
 export const AVERAGE_LATENCY = 'Average Latency';
@@ -129,3 +133,8 @@ export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFA
 export const REMOTE_REPOSITORY_REGISTRATION_CONFIG: Readonly<
   ConfigSchema['remoteRepositoryRegistration']
 > = Object.freeze({ ...DEFAULT_CONFIG.remoteRepositoryRegistration });
+
+// Label key backing the X-Opaque-Id column. The query-insights backend copies the
+// incoming X-Opaque-Id request header into a record's labels under this key; it is the
+// only application-identifier label the backend writes today.
+export const OPAQUE_ID_LABEL_KEY = 'X-Opaque-Id';

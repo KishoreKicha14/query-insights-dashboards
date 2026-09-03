@@ -46,13 +46,18 @@ import {
   WLM_GROUP_ID_PARAM,
   CHART_COLORS,
   REFRESH_INTERVAL_OPTIONS,
+  USERNAME,
+  USER_ROLES,
+  BACKEND_ROLES,
 } from '../../../common/constants';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { getSecurityPluginStatus, SecurityPluginStatus } from '../../utils/datasource-utils';
 import {
   getVersionOnce,
   isVersion33OrHigher,
+  isVersion38OrHigher,
   isVersion37OrHigher,
 } from '../../utils/version-utils';
 import {
@@ -132,6 +137,11 @@ export const InflightQueries = ({
   const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
     useState<boolean>(false);
   const [taskDetailSupported, setTaskDetailSupported] = useState<boolean>(false);
+  const [userInfoVersionGate, setUserInfoVersionGate] = useState<boolean>(false);
+  // Live query user info is only populated from the security plugin's ThreadContext, so gate
+  // the columns on the plugin being available in addition to the version. Fail open on
+  // 'unknown' so a probe hiccup doesn't hide columns that should be there.
+  const [securityStatus, setSecurityStatus] = useState<SecurityPluginStatus>('unknown');
   const wlmCacheRef = useRef<Record<string, boolean>>({});
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
@@ -161,6 +171,10 @@ export const InflightQueries = ({
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
         setTaskDetailSupported(isVersion37OrHigher(version));
+        // Live queries expose user info from LiveQueryRecord, which the backend added in 3.8,
+        // so the Live Queries user-info columns are gated at 3.8. (Top-N / Query Details read
+        // SearchQueryRecord, which has carried user info since 3.5 — hence the different gate.)
+        setUserInfoVersionGate(isVersion38OrHigher(version));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -174,11 +188,23 @@ export const InflightQueries = ({
         setQueryInsightWlmNavigationSupported(false);
         setTaskDetailSupported(false);
         setWlmAvailable(false);
+        setUserInfoVersionGate(false);
       }
     };
 
     checkWlmSupport();
   }, [detectWlm, dataSource?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+      if (!cancelled) setSecurityStatus(status);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [core.http, dataSource?.id]);
 
   // Clean URL after extracting wlmGroupId
   useEffect(() => {
@@ -267,6 +293,14 @@ export const InflightQueries = ({
   }, [core.http, dataSource?.id, wlmGroupId, queryInsightWlmNavigationSupported]);
 
   const liveQueries = query?.response?.live_queries ?? [];
+
+  // User info columns are shown when the cluster version supports them (LiveQueryRecord carries
+  // user info from 3.8; see the version-check effect) AND the security plugin is available
+  // (the backend only fills these fields from the security plugin's user context). Not gated on
+  // data presence: on a polled list, a data-presence heuristic would drop the columns on every
+  // empty poll and re-add them (force-shown, churning saved prefs) on the next non-empty one,
+  // so the columns would flicker and could never be toggled while idle.
+  const userInfoSupported = userInfoVersionGate && securityStatus !== 'unavailable';
 
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
@@ -539,8 +573,30 @@ export const InflightQueries = ({
         type: 'string',
       },
     ];
+    if (userInfoSupported) {
+      fields.push(
+        {
+          label: 'Username',
+          key: 'username',
+          accessor: (q) => (q as any).username,
+          type: 'string',
+        },
+        {
+          label: 'User Roles',
+          key: 'user_roles',
+          accessor: (q) => (q as any).user_roles,
+          type: 'array',
+        },
+        {
+          label: 'Backend Roles',
+          key: 'backend_roles',
+          accessor: (q) => (q as any).backend_roles,
+          type: 'array',
+        }
+      );
+    }
     return fields;
-  }, []);
+  }, [userInfoSupported]);
 
   const fieldMap = useMemo(() => {
     const map = new Map<string, FieldDef>();
@@ -564,12 +620,19 @@ export const InflightQueries = ({
       { id: 'search_type', label: 'Search Type' },
       { id: 'status', label: 'Status' },
     ];
+    if (userInfoSupported) {
+      defs.push(
+        { id: 'username', label: USERNAME },
+        { id: 'user_roles', label: USER_ROLES },
+        { id: 'backend_roles', label: BACKEND_ROLES }
+      );
+    }
     if (queryInsightWlmNavigationSupported) {
       defs.push({ id: 'wlm_group', label: 'WLM Group' });
     }
     defs.push({ id: 'actions', label: 'Actions', pinned: true });
     return defs;
-  }, [queryInsightWlmNavigationSupported]);
+  }, [queryInsightWlmNavigationSupported, userInfoSupported]);
 
   const {
     visibleColumnIds,
@@ -581,6 +644,9 @@ export const InflightQueries = ({
   } = useColumnVisibility({
     storageKey: 'queryInsights_live_visibleColumns',
     columns: columnDefs,
+    // Columns introduced in this release; show them by default for users upgrading from a
+    // version whose stored preferences are in the legacy format.
+    newColumnIds: ['username', 'user_roles', 'backend_roles'],
   });
 
   // Filter live queries based on the dynamic search expression
@@ -1188,6 +1254,33 @@ export const InflightQueries = ({
               ...(isColumnVisible('search_type')
                 ? [{ field: 'search_type', name: 'Search type' }]
                 : []),
+              ...(userInfoSupported && isColumnVisible('username')
+                ? [
+                    {
+                      field: 'username',
+                      name: USERNAME,
+                      render: (username: string) => username || '-',
+                    },
+                  ]
+                : []),
+              ...(userInfoSupported && isColumnVisible('user_roles')
+                ? [
+                    {
+                      field: 'user_roles',
+                      name: USER_ROLES,
+                      render: (roles: string[]) => roles?.join(', ') || '-',
+                    },
+                  ]
+                : []),
+              ...(userInfoSupported && isColumnVisible('backend_roles')
+                ? [
+                    {
+                      field: 'backend_roles',
+                      name: BACKEND_ROLES,
+                      render: (roles: string[]) => roles?.join(', ') || '-',
+                    },
+                  ]
+                : []),
               ...(isColumnVisible('status')
                 ? [
                     {
@@ -1317,6 +1410,11 @@ export const InflightQueries = ({
             total_memory_bytes: selectedItem.measurements?.memory?.number || 0,
             coordinator_task: (selectedItem as any).coordinator_task || null,
             shard_tasks: (selectedItem as any).shard_tasks || [],
+            // User identity (populated on 3.8+ clusters); carried through so the flyout
+            // can render Username / User Roles / Backend Roles when userInfoSupported.
+            username: (selectedItem as any).username,
+            user_roles: (selectedItem as any).user_roles,
+            backend_roles: (selectedItem as any).backend_roles,
             _topNId: (selectedItem as any)._topNId,
             // Direct fields for finished queries
             _indices: (selectedItem as any).indices?.join(', ') || selectedItem.index,
@@ -1329,6 +1427,7 @@ export const InflightQueries = ({
           return (
             <TaskDetailFlyout
               task={richTask as any}
+              userInfoSupported={userInfoSupported}
               onClose={() => setSelectedTaskId(null)}
               onRefresh={async () => {
                 await fetchLiveQueries();

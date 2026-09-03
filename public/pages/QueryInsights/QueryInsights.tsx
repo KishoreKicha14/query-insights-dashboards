@@ -44,9 +44,15 @@ import {
   TOTAL_SHARDS,
   TYPE,
   WLM_GROUP,
+  OPAQUE_ID,
+  OPAQUE_ID_LABEL_KEY,
+  USERNAME,
+  USER_ROLES,
+  BACKEND_ROLES,
   CHART_COLORS,
 } from '../../../common/constants';
 import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
+import { getOpaqueId } from '../../../common/utils/QueryUtils';
 import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
@@ -60,6 +66,7 @@ import {
 import {
   getVersionOnce,
   isVersion33OrHigher,
+  isVersion35OrHigher,
   isVersion36OrHigher,
 } from '../../utils/version-utils';
 import {
@@ -71,6 +78,7 @@ import {
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
+import { getSecurityPluginStatus, SecurityPluginStatus } from '../../utils/datasource-utils';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
@@ -82,6 +90,9 @@ const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 const WLM_GROUP_FIELD = 'wlm_group_id';
+const USERNAME_FIELD = 'username';
+const USER_ROLES_FIELD = 'user_roles';
+const BACKEND_ROLES_FIELD = 'backend_roles';
 const METRIC_DEFAULT_MSG = 'Not enabled';
 
 /**
@@ -123,6 +134,24 @@ const QueryInsights = ({
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
   const [statusSupported, setStatusSupported] = useState<boolean>(false);
+  // Username and User Roles shipped in SearchQueryRecord in 3.5; Backend Roles was added later
+  // (query-insights #552, 3.6.0.0+), so it needs its own version gate — on a 3.5 cluster the
+  // backend never populates backend_roles.
+  const [userInfoVersionGate, setUserInfoVersionGate] = useState<boolean>(false);
+  const [backendRolesVersionGate, setBackendRolesVersionGate] = useState<boolean>(false);
+  // The backend only populates user info from the security plugin's ThreadContext, so on a
+  // cluster without security these fields are always absent. Gate the columns on the plugin
+  // being available (probed via getSecurityPluginStatus) in addition to the version, so a
+  // security-disabled 3.5+ cluster doesn't show three permanently-'-' columns. Fail open on
+  // 'unknown' so a probe hiccup doesn't hide columns that should be there.
+  const [securityStatus, setSecurityStatus] = useState<SecurityPluginStatus>('unknown');
+  const securityAvailable = securityStatus !== 'unavailable';
+  // Shown when the cluster version supports the fields AND the security plugin is available.
+  // Deliberately NOT gated on the presence of username data in the current result set: a
+  // data-presence heuristic makes the columns appear and disappear as the fetched window
+  // changes, which churns the persisted column-visibility preferences.
+  const userInfoSupported = userInfoVersionGate && securityAvailable;
+  const backendRolesSupported = backendRolesVersionGate && securityAvailable;
   const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
     useState<boolean>(false);
   // Initialize search query based on URL parameters
@@ -184,11 +213,24 @@ const QueryInsights = ({
       { id: 'indices', label: 'Indices' },
       { id: 'search_type', label: 'Search Type', defaultVisible: false },
       { id: 'node_id', label: 'Node ID', defaultVisible: false },
+      { id: 'opaque_id', label: OPAQUE_ID },
+      ...(userInfoSupported
+        ? [
+            { id: 'username', label: USERNAME },
+            { id: 'user_roles', label: USER_ROLES },
+          ]
+        : []),
+      ...(backendRolesSupported ? [{ id: 'backend_roles', label: BACKEND_ROLES }] : []),
       ...(queryInsightWlmNavigationSupported ? [{ id: 'wlm_group', label: 'WLM Group' }] : []),
       { id: 'total_shards', label: 'Total Shards', defaultVisible: false },
     ];
     return defs;
-  }, [statusSupported, queryInsightWlmNavigationSupported]);
+  }, [
+    statusSupported,
+    queryInsightWlmNavigationSupported,
+    userInfoSupported,
+    backendRolesSupported,
+  ]);
 
   const {
     visibleColumnIds,
@@ -200,6 +242,9 @@ const QueryInsights = ({
   } = useColumnVisibility({
     storageKey: 'queryInsights_topn_visibleColumns',
     columns: columnDefs,
+    // Columns introduced in this release. Users upgrading from a version with legacy-format
+    // stored preferences should see these by default rather than have them locked hidden.
+    newColumnIds: ['opaque_id', 'username', 'user_roles', 'backend_roles'],
   });
 
   const from = parseDateString(currStart);
@@ -249,6 +294,11 @@ const QueryInsights = ({
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
         setStatusSupported(isVersion36OrHigher(version));
+        setUserInfoVersionGate(isVersion35OrHigher(version));
+        setBackendRolesVersionGate(isVersion36OrHigher(version));
+        // Probe security-plugin availability so user-info columns aren't shown (permanently
+        // empty) on a security-disabled cluster. Fail open on 'unknown'.
+        setSecurityStatus(await getSecurityPluginStatus(core.http, dataSource?.id));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -259,10 +309,13 @@ const QueryInsights = ({
       } catch (_e) {
         setQueryInsightWlmNavigationSupported(false);
         setWlmAvailable(false);
+        setUserInfoVersionGate(false);
+        setBackendRolesVersionGate(false);
       }
     };
 
     checkWlmSupport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detectWlm, dataSource?.id]);
 
   // Fetch workload groups on mount and data source change
@@ -372,8 +425,35 @@ const QueryInsights = ({
         type: 'string',
       });
     }
+    fields.push({
+      label: OPAQUE_ID,
+      key: 'opaque_id',
+      // Return the raw label (undefined when absent) so records without an opaque id are not
+      // collected as an empty-string suggestion / filter value in DynamicSearchBar.
+      accessor: (q) => q.labels?.[OPAQUE_ID_LABEL_KEY],
+      type: 'string',
+    });
+    if (userInfoSupported) {
+      fields.push(
+        { label: 'Username', key: 'username', accessor: (q) => q.username, type: 'string' },
+        {
+          label: 'User Roles',
+          key: 'user_roles',
+          accessor: (q) => q.user_roles,
+          type: 'array',
+        }
+      );
+    }
+    if (backendRolesSupported) {
+      fields.push({
+        label: 'Backend Roles',
+        key: 'backend_roles',
+        accessor: (q) => q.backend_roles,
+        type: 'array',
+      });
+    }
     return fields;
-  }, [queryInsightWlmNavigationSupported]);
+  }, [queryInsightWlmNavigationSupported, userInfoSupported, backendRolesSupported]);
 
   const fieldMap = useMemo(() => {
     const map = new Map<string, FieldDef>();
@@ -606,6 +686,74 @@ const QueryInsights = ({
         sortable: true,
         truncateText: true,
       },
+      {
+        id: 'opaque_id',
+        name: OPAQUE_ID,
+        render: (q: SearchQueryRecord) => {
+          if (q.group_by === 'SIMILARITY') return <EuiBadge color="hollow">Aggregated</EuiBadge>;
+          return <span>{getOpaqueId(q.labels)}</span>;
+        },
+        // Return the raw label (undefined when absent) so rows without an opaque id sort to
+        // the end rather than being grouped at the top by an empty-string key.
+        sortable: (q: SearchQueryRecord) => q.labels?.[OPAQUE_ID_LABEL_KEY],
+        truncateText: true,
+      },
+      ...(userInfoSupported
+        ? [
+            {
+              id: 'username',
+              field: USERNAME_FIELD as keyof SearchQueryRecord,
+              name: USERNAME,
+              render: (username: string, q: SearchQueryRecord) => (
+                <span>
+                  {q.group_by === 'SIMILARITY' ? (
+                    <EuiBadge color="hollow">Aggregated</EuiBadge>
+                  ) : (
+                    username || '-'
+                  )}
+                </span>
+              ),
+              sortable: true,
+              truncateText: true,
+            },
+            {
+              id: 'user_roles',
+              field: USER_ROLES_FIELD as keyof SearchQueryRecord,
+              name: USER_ROLES,
+              render: (roles: string[], q: SearchQueryRecord) => (
+                <span>
+                  {q.group_by === 'SIMILARITY' ? (
+                    <EuiBadge color="hollow">Aggregated</EuiBadge>
+                  ) : (
+                    roles?.join(', ') || '-'
+                  )}
+                </span>
+              ),
+              sortable: (q: SearchQueryRecord) => q.user_roles?.join(', ') || undefined,
+              truncateText: true,
+            },
+          ]
+        : []),
+      ...(backendRolesSupported
+        ? [
+            {
+              id: 'backend_roles',
+              field: BACKEND_ROLES_FIELD as keyof SearchQueryRecord,
+              name: BACKEND_ROLES,
+              render: (roles: string[], q: SearchQueryRecord) => (
+                <span>
+                  {q.group_by === 'SIMILARITY' ? (
+                    <EuiBadge color="hollow">Aggregated</EuiBadge>
+                  ) : (
+                    roles?.join(', ') || '-'
+                  )}
+                </span>
+              ),
+              sortable: (q: SearchQueryRecord) => q.backend_roles?.join(', ') || undefined,
+              truncateText: true,
+            },
+          ]
+        : []),
       ...(queryInsightWlmNavigationSupported
         ? [
             {
